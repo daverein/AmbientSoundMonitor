@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Ambient Noise Monitor</string>
+    <!--
+    This string is used for square devices and overridden by hello_world in
+    values-round/strings.xml for round devices.
+    -->
+    <string name="sampledb_stop">Stop</string>
+    <string name="sampledb_start">Measure</string>
+    <string name="decibal_monitor">Sound Level Monitor</string>
+    <string name="snooze">Mute for 1 Hour</string>
+    <string name="snooze2">Mute for 2 Hours</string>
+    <string name="sampling_notification_expanded_title">Potential Hearing Damage</string>
+    <string name="sampling_notification_expanded_summary">Measured Loudness Level</string>
+    <string name="sampling_notification_title">LOUD Environment</string>
+    <string name="sampling_notification_body">You have been in a loud environment (%1$s dB) for %2$d minutes, which may produce some hearing issues.</string>
+
+    <string name="tile_messaging_label">Sampling Tile</string>
+    <string name="tile_messaging_description">Sampling Title Desc</string>
+</resources>

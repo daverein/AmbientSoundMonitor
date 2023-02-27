@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="com.google.android.permission.PROVIDE_BACKGROUND" />
+    <uses-feature android:name="android.hardware.type.watch" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/hearing_damage_small"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@android:style/Theme.DeviceDefault">
+        <uses-library
+            android:name="com.google.android.wearable"
+            android:required="true" />
+
+        <!--
+               Set to true if your app is Standalone, that is, it does not require the handheld
+               app to run.
+        -->
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
+        <activity
+            android:launchMode= "singleInstance"
+            android:name=".presentation.DBMonitor"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@android:style/Theme.DeviceDefault">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service
+            android:name=".presentation.tile.SamplingTile"
+            android:description="@string/tile_messaging_description"
+            android:exported="true"
+            android:icon="@drawable/tile_preview"
+            android:label="@string/tile_messaging_label"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter>
+                <action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" />
+            </intent-filter>
+
+            <meta-data
+                android:name="androidx.wear.tiles.PREVIEW"
+                android:resource="@drawable/hearing_damage" />
+        </service>
+        <service android:name=".services.SamplingService"
+            android:foregroundServiceType="microphone"
+            android:permission="android.permission.RECORD_AUDIO"
+            android:exported="true" >
+            <intent-filter>
+
+                <action android:name="com.programmersbox.forestwoodass.anmonitor.START"/>
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
+        <receiver android:name=".utils.MuteNotificationReceiver"
+            android:exported="true"
+            >
+            <intent-filter>
+                <action android:name="com.programmersbox.forestwoodass.anmonitor.MUTE"/>
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>
