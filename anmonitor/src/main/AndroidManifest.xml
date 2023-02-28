@@ -29,8 +29,8 @@
         <activity
             android:launchMode= "singleInstance"
             android:name=".presentation.DBMonitor"
+            android:icon="@drawable/noise_damage"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@android:style/Theme.DeviceDefault">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
