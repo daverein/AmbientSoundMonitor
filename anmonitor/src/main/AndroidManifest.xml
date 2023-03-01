@@ -29,7 +29,7 @@
         <activity
             android:launchMode= "singleInstance"
             android:name=".presentation.DBMonitor"
-            android:icon="@drawable/noise_damage"
+            android:icon="@drawable/hearing_damage"
             android:exported="true"
             android:theme="@android:style/Theme.DeviceDefault">
             <intent-filter>
@@ -42,7 +42,7 @@
             android:name=".presentation.tile.SamplingTile"
             android:description="@string/tile_messaging_description"
             android:exported="true"
-            android:icon="@drawable/tile_preview"
+            android:icon="@drawable/hearing_damage"
             android:label="@string/tile_messaging_label"
             android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
             <intent-filter>
@@ -51,7 +51,7 @@
 
             <meta-data
                 android:name="androidx.wear.tiles.PREVIEW"
-                android:resource="@drawable/hearing_damage" />
+                android:resource="@drawable/tile_preview" />
         </service>
         <service android:name=".services.SamplingService"
             android:foregroundServiceType="microphone"
