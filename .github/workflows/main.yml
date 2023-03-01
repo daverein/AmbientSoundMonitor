@@ -36,7 +36,7 @@ jobs:
       - name: Bump version
         uses: chkfung/android-version-actions@v1.2
         with:
-          gradlePath: app/build.gradle
+          gradlePath: anmonitor/build.gradle
           versionCode: ${{github.run_number}}
           versionName: ${{ env.VERSION_TAG }}
 
@@ -55,13 +55,13 @@ jobs:
           wrapper-cache-enabled: true
           dependencies-cache-enabled: true
           configuration-cache-enabled: true
-          arguments: app:bundleRelease installer:bundleRelease
+          arguments: anmonitor:bundleRelease installer:bundleRelease
 
       - uses: r0adkll/sign-android-release@v1
         name: Sign app APK
         id: anmonitor_sign
         with:
-          releaseDirectory: app/build/outputs/bundle/release/
+          releaseDirectory: anmonitor/build/outputs/bundle/release/
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -84,12 +84,12 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Signed Concentric Native App
+          name: Signed Ambient Monitor App
           path: anmonitor-release.aab
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Signed Concentric Native Installer
+          name: Signed Ambient Monitor Installer
           path: anmonitor-installer-release.aab
 
       - name: Build Artifacts APK
@@ -106,7 +106,7 @@ jobs:
         name: Sign app APK
         id: anmonitor_sign_apk
         with:
-          releaseDirectory: app/build/outputs/apk/release/
+          releaseDirectory: anmonitor/build/outputs/apk/release/
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -129,12 +129,12 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Signed Concentric Native App APK
+          name: Signed Ambient Monitor App APK
           path: anmonitor-release.apk
 
       - uses: actions/upload-artifact@v3
         with:
-          name: Signed Concentric Native Installer APK
+          name: Signed Ambient Monitor Installer APK
           path: anmonitor-installer-release.apk
 
   release:
@@ -163,10 +163,10 @@ jobs:
           tag_name: ${{ env.VERSION_TAG }}
           name: Release ${{ env.VERSION_TAG }}
           files: |
-            Signed Concentric Native App/anmonitor-release.aab
-            Signed Concentric Native Installer/anmonitor-installer-release.aab
-            Signed Concentric Native App APK/anmonitor-release.apk
-            Signed Concentric Native Installer APK/anmonitor-installer-release.apk
+            Signed Ambient Monitor App/anmonitor-release.aab
+            Signed Ambient Monitor Installer/anmonitor-installer-release.aab
+            Signed Ambient Monitor App APK/anmonitor-release.apk
+            Signed Ambient Monitor Installer APK/anmonitor-installer-release.apk
 
   releaseToGooglePlay:
     name: Release to Google Play
@@ -177,12 +177,12 @@ jobs:
       - name: Download APK from build
         uses: actions/download-artifact@v3
         with:
-          name: Signed Concentric Native App
+          name: Signed Ambient Monitor App
 
       - name: Download APK from build
         uses: actions/download-artifact@v3
         with:
-          name: Signed Concentric Native Installer
+          name: Signed Ambient Monitor Installer
 
       - uses: r0adkll/upload-google-play@v1
         with:
