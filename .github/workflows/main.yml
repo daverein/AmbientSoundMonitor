@@ -1,0 +1,193 @@
+name: Release Workflow
+
+on:
+  push:
+   tags:
+      - 'v*'
+   paths-ignore:
+     - '.github/**'
+
+  workflow_dispatch:
+    inputs:
+      releaseToGooglePlay:
+        description: 'Release to Google Play?'
+        required: true
+        default: 'false'
+jobs:
+  apk:
+    name: Generate APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: adopt
+          java-version: 11
+
+      - name: Get tag name
+        id: get_tag_name
+        run: |
+          set -x
+          echo "VERSION_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: Bump version
+        uses: chkfung/android-version-actions@v1.2
+        with:
+          gradlePath: app/build.gradle
+          versionCode: ${{github.run_number}}
+          versionName: ${{ env.VERSION_TAG }}
+
+      - name: Bump version
+        uses: chkfung/android-version-actions@v1.2
+        with:
+          gradlePath: installer/build.gradle
+          versionCode: 100${{github.run_number}}
+          versionName: ${{ env.VERSION_TAG }}
+
+      - name: Build Artifacts
+        id: buildApks
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: current
+          wrapper-cache-enabled: true
+          dependencies-cache-enabled: true
+          configuration-cache-enabled: true
+          arguments: app:bundleRelease installer:bundleRelease
+
+      - uses: r0adkll/sign-android-release@v1
+        name: Sign app APK
+        id: anmonitor_sign
+        with:
+          releaseDirectory: app/build/outputs/bundle/release/
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - uses: r0adkll/sign-android-release@v1
+        name: Sign installer APK
+        id: anmonitor_installer_sign
+        with:
+          releaseDirectory: installer/build/outputs/bundle/release/
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Clean up build artifacts
+        run: |
+          cp ${{ steps.anmonitor_sign.outputs.signedReleaseFile }} anmonitor-release.aab
+          cp ${{ steps.anmonitor_installer_sign.outputs.signedReleaseFile }} anmonitor-installer-release.aab
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Signed Concentric Native App
+          path: anmonitor-release.aab
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Signed Concentric Native Installer
+          path: anmonitor-installer-release.aab
+
+      - name: Build Artifacts APK
+        id: buildRealApks
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: current
+          wrapper-cache-enabled: true
+          dependencies-cache-enabled: true
+          configuration-cache-enabled: true
+          arguments: app:assembleRelease installer:assembleRelease
+
+      - uses: r0adkll/sign-android-release@v1
+        name: Sign app APK
+        id: anmonitor_sign_apk
+        with:
+          releaseDirectory: app/build/outputs/apk/release/
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - uses: r0adkll/sign-android-release@v1
+        name: Sign installer APK
+        id: anmonitor_installer_sign_apk
+        with:
+          releaseDirectory: installer/build/outputs/apk/release/
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Clean up build artifacts APK
+        run: |
+          cp ${{ steps.anmonitor_sign_apk.outputs.signedReleaseFile }} anmonitor-release.apk
+          cp ${{ steps.anmonitor_installer_sign_apk.outputs.signedReleaseFile }} anmonitor-installer-release.apk
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Signed Concentric Native App APK
+          path: anmonitor-release.apk
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: Signed Concentric Native Installer APK
+          path: anmonitor-installer-release.apk
+
+  release:
+    name: Release APK
+    needs: apk
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APP from build
+        uses: actions/download-artifact@v3
+
+      - name: Get tag name
+        id: get_tag_name
+        run: |
+          set -x
+          echo "VERSION_TAG=${GITHUB_REF/refs\/tags\//}" >> $GITHUB_ENV
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          fail_on_unmatched_files: true
+          tag_name: ${{ env.VERSION_TAG }}
+          name: Release ${{ env.VERSION_TAG }}
+          files: |
+            Signed Concentric Native App/anmonitor-release.aab
+            Signed Concentric Native Installer/anmonitor-installer-release.aab
+            Signed Concentric Native App APK/anmonitor-release.apk
+            Signed Concentric Native Installer APK/anmonitor-installer-release.apk
+
+  releaseToGooglePlay:
+    name: Release to Google Play
+    needs: apk
+    if: startsWith(github.ref, 'refs/tags/') || github.event.inputs.releaseToGooglePlay == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download APK from build
+        uses: actions/download-artifact@v3
+        with:
+          name: Signed Concentric Native App
+
+      - name: Download APK from build
+        uses: actions/download-artifact@v3
+        with:
+          name: Signed Concentric Native Installer
+
+      - uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.SERVICE_ACCOUNT_JSON }}
+          packageName: com.programmersbox.forestwoodass.anmonitor
+          releaseFiles: anmonitor-installer-release.aab,anmonitor-release.aab
+          track: production
+          status: completed
