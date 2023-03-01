@@ -12,6 +12,7 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
 import com.programmersbox.forestwoodass.anmonitor.utils.MonitorDBLevels
 import com.programmersbox.forestwoodass.anmonitor.utils.SoundRecorder
 import java.time.Duration
@@ -19,6 +20,7 @@ import kotlinx.coroutines.*
 
 
 class SamplingService : Service() {
+    private val repo: SamplingSoundDataRepository by lazy { SamplingSoundDataRepository(this) }
     private lateinit var monitorDB: MonitorDBLevels
     private lateinit var keyguardManager: KeyguardManager
     private lateinit var soundRecorder: SoundRecorder
@@ -56,9 +58,18 @@ class SamplingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if ( intent?.action == "com.programmersbox.forestwoodass.anmonitor.STOP") {
+            Log.d(TAG, "Got a STOP command")
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+            return START_NOT_STICKY
+        }
         if ( ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO
                 ) != PackageManager.PERMISSION_GRANTED
         ) {
+
+            Log.d(TAG, "No permissions")
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }
@@ -120,6 +131,7 @@ class SamplingService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        repo.refreshTiles()
         Log.d(TAG, "onDestroy, cancelling service")
         if (::runningService.isInitialized) {
             runningService.cancel()

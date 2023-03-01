@@ -31,14 +31,14 @@ class SamplingSoundDataRepository(private val context: Context) {
     fun getSamplePrimaryColor(): Int {
         return sharedPreferences.getInt(
             SAMPLE_PRIMARY_COLOR,
-            android.graphics.Color.parseColor("#81ACF4")
+            android.graphics.Color.parseColor("#00E676")
         )
     }
 
     fun getSampleSecondaryColor(): Int {
         return sharedPreferences.getInt(
             SAMPLE_SECONDARY_COLOR, android.graphics.Color.parseColor(
-                "#e8183C75"
+                "#226949"
             )
         )
     }

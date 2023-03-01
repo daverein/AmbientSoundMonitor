@@ -1,6 +1,7 @@
 package com.programmersbox.forestwoodass.anmonitor.presentation.tile
 
 import android.annotation.SuppressLint
+import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import androidx.compose.ui.graphics.Color
@@ -19,6 +20,7 @@ import com.programmersbox.forestwoodass.anmonitor.services.SamplingService
 import com.programmersbox.forestwoodass.anmonitor.utils.MonitorDBLevels
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 private const val RESOURCES_VERSION = "0"
 private const val GrayColor = "#80FFFFFF"
@@ -102,18 +104,20 @@ class SamplingTile : SuspendingTileService() {
                     .build()
             )
         } else {
-            layout.setPrimaryChipContent(
-                CompactChip.Builder(context, " Measure ", emptyClickable, deviceParameters)
-                    .setChipColors(
-                        ChipColors(
-                            /*backgroundColor=*/ ColorBuilders.argb(
-                                repo.getSampleSecondaryColor()
-                            ),
-                            /*contentColor=*/ ColorBuilders.argb(Color.White.toArgb())
+            if ( isMyServiceRunning(SamplingService::class.java) ) {
+                layout.setPrimaryChipContent(
+                    CompactChip.Builder(context, " Measure ", emptyClickable, deviceParameters)
+                        .setChipColors(
+                            ChipColors(
+                                /*backgroundColor=*/ ColorBuilders.argb(
+                                    repo.getSampleSecondaryColor()
+                                ),
+                                /*contentColor=*/ ColorBuilders.argb(Color.White.toArgb())
+                            )
                         )
-                    )
-                    .build()
-            )
+                        .build()
+                )
+            }
         }
         return layout.build()
     }
@@ -134,7 +138,8 @@ class SamplingTile : SuspendingTileService() {
         if ( requestParams.state?.lastClickableId == IGNORE_CMD ) {
             refreshing = true
         }
-        if ( requestParams.state?.lastClickableId == REFRESH_CMD ) {
+        if ( requestParams.state?.lastClickableId == REFRESH_CMD
+                && isMyServiceRunning(SamplingService::class.java) ) {
             startForegroundService(Intent(this, SamplingService::class.java))
             refreshing = true
        }
@@ -156,4 +161,14 @@ class SamplingTile : SuspendingTileService() {
             .build()
     }
 
+    @Suppress("DEPRECATION")
+    private fun isMyServiceRunning(serviceClass: Class<*>): Boolean {
+        val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
+             if (serviceClass.name == service.service.className) {
+                return true
+            }
+        }
+        return false
+    }
 }
