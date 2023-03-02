@@ -3,8 +3,7 @@ package com.programmersbox.forestwoodass.anmonitor.data.repository
 import android.app.Service
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.wear.tiles.TileService
-import com.programmersbox.forestwoodass.anmonitor.presentation.tile.SamplingTile
+import com.programmersbox.forestwoodass.anmonitor.presentation.tile.SamplingTile.Companion.refreshTile
 import java.util.*
 
 class SamplingSoundDataRepository(private val context: Context) {
@@ -19,13 +18,11 @@ class SamplingSoundDataRepository(private val context: Context) {
             .putFloat(LATEST_SAMPLE, sampleDB)
             .putLong(LATEST_SAMPLE_TIME, Calendar.getInstance().timeInMillis)
             .apply()
-        TileService.getUpdater(context)
-            .requestUpdate(SamplingTile::class.java)
+        refreshTiles()
     }
 
     fun refreshTiles() {
-        TileService.getUpdater(context)
-            .requestUpdate(SamplingTile::class.java)
+        refreshTile(context)
     }
 
     fun getSamplePrimaryColor(): Int {

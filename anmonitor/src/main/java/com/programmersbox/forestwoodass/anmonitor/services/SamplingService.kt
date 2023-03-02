@@ -1,6 +1,7 @@
 package com.programmersbox.forestwoodass.anmonitor.services
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
@@ -12,15 +13,14 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
+import com.programmersbox.forestwoodass.anmonitor.presentation.tile.SamplingTile.Companion.refreshTile
 import com.programmersbox.forestwoodass.anmonitor.utils.MonitorDBLevels
 import com.programmersbox.forestwoodass.anmonitor.utils.SoundRecorder
-import java.time.Duration
 import kotlinx.coroutines.*
+import java.time.Duration
 
 
 class SamplingService : Service() {
-    private val repo: SamplingSoundDataRepository by lazy { SamplingSoundDataRepository(this) }
     private lateinit var monitorDB: MonitorDBLevels
     private lateinit var keyguardManager: KeyguardManager
     private lateinit var soundRecorder: SoundRecorder
@@ -85,6 +85,7 @@ class SamplingService : Service() {
         return START_STICKY
     }
 
+    @SuppressLint("MissingPermission")
     private suspend fun runMonitoringAlgorithm() {
         // Make sure the service is properly shutdown from another instance before starting
         delay(10*1000)
@@ -131,7 +132,7 @@ class SamplingService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        repo.refreshTiles()
+        refreshTile(this)
         Log.d(TAG, "onDestroy, cancelling service")
         if (::runningService.isInitialized) {
             runningService.cancel()

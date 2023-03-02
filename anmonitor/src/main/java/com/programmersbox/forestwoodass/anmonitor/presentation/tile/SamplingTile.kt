@@ -171,4 +171,12 @@ class SamplingTile : SuspendingTileService() {
         }
         return false
     }
+
+    companion object {
+        fun refreshTile(context: Context)
+        {
+            getUpdater(context)
+                .requestUpdate(SamplingTile::class.java)
+        }
+    }
 }
