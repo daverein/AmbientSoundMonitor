@@ -24,31 +24,24 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.*
+import com.google.accompanist.pager.*
 import com.programmersbox.forestwoodass.anmonitor.R
 import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
 import com.programmersbox.forestwoodass.anmonitor.presentation.theme.WearAppTheme
 import com.programmersbox.forestwoodass.anmonitor.utils.SoundRecorder
-import kotlin.math.min
 import kotlinx.coroutines.*
+import kotlin.math.min
 
 
 class DBMonitor : ComponentActivity() {
@@ -94,24 +87,54 @@ class DBMonitor : ComponentActivity() {
         }
     }
 
+    @OptIn(ExperimentalPagerApi::class)
     @Composable
     fun WearApp() {
-        WearAppTheme() {
-            LevelIndicator(levelIndicatorValue)
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .selectableGroup(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-
-            ) {
-                DBTextValue(text = dbText)
-                ActionButton(
-                    onStateServiceChange = { isServiceStateActive = it },
-                    isStateServiceActive = isServiceStateActive
-                )
+        WearAppTheme {
+            Column(Modifier.fillMaxSize()) {
+                val pagerState = rememberPagerState()
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    VerticalPager(
+                        count = 2,
+                        state = pagerState,
+                    ) {
+                            page ->
+                        when ( page ) {
+                            1 -> SamplingHistory(pagerState)
+                            0-> Page0(pagerState)
+                        }
+                    }
+                    VerticalPagerIndicator(
+                        pagerState = pagerState
+                    )
+                }
             }
+        }
+    }
+
+
+
+    @OptIn(ExperimentalPagerApi::class)
+    @Composable
+    fun Page0(pagerState: PagerState)
+    {
+        LevelIndicator(levelIndicatorValue)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .selectableGroup(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+
+        ) {
+            DBTextValue(text = dbText)
+            ActionButton(
+                onStateServiceChange = { isServiceStateActive = it },
+                isStateServiceActive = isServiceStateActive
+            )
         }
     }
 
@@ -331,18 +354,6 @@ class DBMonitor : ComponentActivity() {
         }
     }
 
-    @Composable
-    fun KeepScreenOn() {
-        val context = LocalContext.current
-        DisposableEffect(Unit) {
-            val window = context.findActivity()?.window
-            window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            onDispose {
-                window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            }
-        }
-    }
-
     private fun Context.findActivity(): Activity? {
         var context = this
         while (context is ContextWrapper) {
@@ -350,11 +361,6 @@ class DBMonitor : ComponentActivity() {
             context = context.baseContext
         }
         return null
-    }
-
-    @Composable
-    fun Screen() {
-        KeepScreenOn()
     }
 
     companion object {

@@ -2,11 +2,19 @@ package com.programmersbox.forestwoodass.anmonitor.data.repository
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import java.util.Calendar
 
 class DBLevelStore  // creating a constructor for our database handler.
     (context: Context?) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
+
+    data class SampleValue(
+        var sampleValue: Float = 0.0f,
+        var timestamp: Long = 0L
+    ) {
+    }
     // below method is for creating a database by running a sqlite query
     override fun onCreate(db: SQLiteDatabase) {
         // on below line we are creating
@@ -16,7 +24,7 @@ class DBLevelStore  // creating a constructor for our database handler.
         val query = ("CREATE TABLE " + TABLE_NAME + " ("
                 + ID_COL + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + NAME_COL + " FLOAT,"
-                + DURATION_COL + " datetime default current_timestamp)"
+                + DURATION_COL + " LONG )"
                 )
 
         // at last we are calling a exec sql
@@ -42,6 +50,9 @@ class DBLevelStore  // creating a constructor for our database handler.
         // along with its key and value pair.
         values.put(NAME_COL, courseName)
 
+
+        values.put(DURATION_COL, Calendar.getInstance().timeInMillis)
+
         // after adding all values we are passing
         // content values to our table.
         db.insert(TABLE_NAME, null, values)
@@ -49,6 +60,28 @@ class DBLevelStore  // creating a constructor for our database handler.
         // at last we are closing our
         // database after adding database.
         db.close()
+    }
+
+    fun getAllSamples(backInTime: Int): ArrayList<SampleValue> {
+        val beforeTime = Calendar.getInstance().timeInMillis - (Calendar.getInstance().get(Calendar.HOUR)*(1000*60*60))
+        val db = this.readableDatabase
+        val cursorSamples: Cursor = db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime", null)
+        val samplesModelArrayList: ArrayList<SampleValue> = ArrayList()
+
+        if (cursorSamples.moveToFirst()) {
+            do {
+                samplesModelArrayList.add(
+                    SampleValue(
+                        cursorSamples.getFloat(1),
+                        cursorSamples.getLong(2),
+                    )
+                )
+            } while (cursorSamples.moveToNext())
+            // moving our cursor to next.
+        }
+
+        cursorSamples.close()
+        return samplesModelArrayList
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {

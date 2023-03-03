@@ -87,6 +87,9 @@ class MonitorDBLevels(context: Context) {
         var rc = DEFAULT_WAIT_TIME
         if (lastMaxDB > 0.0) {
             repo.putSampleDBValue(lastMaxDB)
+            // Record level and timestamp here
+            dbHelper.addNewSample(lastMaxDB)
+
             if (lastMaxDB > minAlertLevel) {
                 if (startLevelsTimestamp == 0L) {
                     startLevelsTimestamp = Calendar.getInstance().timeInMillis
@@ -110,8 +113,6 @@ class MonitorDBLevels(context: Context) {
 
     private fun determineShowNotification() {
         if (showNotification) {
-            // Record level and timestamp here
-            dbHelper.addNewSample(lastMaxDB)
             if (repo.getMuteNotificationsUntil() < Calendar.getInstance().timeInMillis) {
                 notificationHelper.showNotification(
                     lastMaxDB,
