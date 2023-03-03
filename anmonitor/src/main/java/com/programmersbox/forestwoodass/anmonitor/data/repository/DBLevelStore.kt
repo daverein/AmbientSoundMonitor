@@ -62,8 +62,14 @@ class DBLevelStore  // creating a constructor for our database handler.
         db.close()
     }
 
-    fun getAllSamples(backInTime: Int): ArrayList<SampleValue> {
-        val beforeTime = Calendar.getInstance().timeInMillis - (Calendar.getInstance().get(Calendar.HOUR)*(1000*60*60))
+    fun getAllSamples(weekly: Boolean): ArrayList<SampleValue> {
+        val beforeTime = when ( weekly ) {
+            false -> Calendar.getInstance().timeInMillis - ((Calendar.getInstance().get(Calendar.HOUR)*(1000*60*60))
+                                    +(Calendar.getInstance().get(Calendar.MINUTE)*(1000*60)))
+            true -> {
+                (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)+1) * (1000*60*60*24)
+            }
+        }
         val db = this.readableDatabase
         val cursorSamples: Cursor = db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime", null)
         val samplesModelArrayList: ArrayList<SampleValue> = ArrayList()

@@ -29,17 +29,17 @@ import com.google.accompanist.pager.*
 import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
 import kotlinx.coroutines.*
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
+private const val TAG = "SamplingHistory"
+private const val GraphColor = "#88888888"
 
-const val TAG = "SamplingHistory"
-
-@OptIn(ExperimentalPagerApi::class)
 @Composable
-fun SamplingHistory(pagerState: PagerState) {
+fun SamplingHistory(weekView: Boolean) {
     val dbHelper = DBLevelStore(LocalContext.current)
-    val samples = dbHelper.getAllSamples(1000*60*60*24)
+    val samples = dbHelper.getAllSamples(weekView)
     Log.d(TAG, "Got ${samples.size} items")
     var minValue = 120f
     var maxValue = 0f
@@ -47,10 +47,84 @@ fun SamplingHistory(pagerState: PagerState) {
         minValue = min(minValue, it.sampleValue)
         maxValue = max(maxValue, it.sampleValue)
     }
-    val leadingTextStyle = TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.primary, fontSize = 8.sp)
-    val leadingTextStyle2 = TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.secondary, fontSize = 8.sp)
-    val month :String = DateFormat.format("MMM", Calendar.getInstance().timeInMillis).toString()
-    val day :String = DateFormat.format(" dd", Calendar.getInstance().timeInMillis).toString()
+    FormatTimeText(weekView)
+    Column(
+        modifier = Modifier
+            .selectableGroup(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+
+        Spacer(Modifier.padding(10.dp))
+        Text(buildAnnotatedString {
+            withStyle(style = SpanStyle(fontSize = 10.sp, color = Color.LightGray)) {
+                if (weekView) {
+                    append("This Week")
+                } else {
+                    append("Today")
+                }
+            }
+        })
+        Spacer(Modifier.padding(1.dp))
+        Text(buildAnnotatedString {
+            withStyle(style = SpanStyle(fontSize = 18.sp, color = MaterialTheme.colors.primary)) {
+                append(
+                    String.format(
+                        "%.1f",
+                        minValue
+                    )
+                )
+            }
+            withStyle(style = SpanStyle(fontSize = 8.sp, color = MaterialTheme.colors.primary)) {
+                append("dB")
+            }
+            withStyle(style = SpanStyle(fontSize = 18.sp, color = MaterialTheme.colors.primary)) {
+                append(
+                    String.format(
+                        " - %.1f",
+                        maxValue
+                    )
+                )
+            }
+            withStyle(style = SpanStyle(fontSize = 8.sp, color = MaterialTheme.colors.primary)) {
+                append("dB")
+            }
+        })
+        Spacer(Modifier.padding(3.dp))
+        ChartLevels(weekView, samples)
+        Spacer(Modifier.padding(3.dp))
+        Text(buildAnnotatedString {
+            withStyle(
+                style = SpanStyle(
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colors.secondaryVariant
+                )
+            ) {
+                append("No warnings")
+            }
+        })
+    }
+}
+
+@Composable
+private fun FormatTimeText(weekView: Boolean) {
+    val leadingTextStyle =
+        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.primary, fontSize = 8.sp)
+    val leadingTextStyle2 =
+        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.secondary, fontSize = 8.sp)
+    val timeTextFirstPart: String
+    val timeTextSecondPart: String
+    if (weekView) {
+        val dow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+        val startTime = Calendar.getInstance().timeInMillis - ((dow - 1) * (1000 * 60 * 60 * 24))
+        val endTime = Calendar.getInstance().timeInMillis + ((7 - dow) * (1000 * 60 * 60 * 24))
+        timeTextFirstPart = "${DateFormat.format("MMM dd", startTime)} - "
+        timeTextSecondPart = " ${DateFormat.format("MMM dd", endTime)}"
+    } else {
+        val month: String = DateFormat.format("MMM", Calendar.getInstance().timeInMillis).toString()
+        val day: String = DateFormat.format(" dd", Calendar.getInstance().timeInMillis).toString()
+        timeTextFirstPart = month
+        timeTextSecondPart = day
+    }
 
     TimeText(
         timeSource = TimeTextDefaults.timeSource(
@@ -59,70 +133,35 @@ fun SamplingHistory(pagerState: PagerState) {
         timeTextStyle = leadingTextStyle,
         startLinearContent = {
             Text(
-                text = "ETA 12:48",
-                style = leadingTextStyle2
+                text = timeTextFirstPart,
+                style = (leadingTextStyle2)
+            )
+            Text(
+                text = timeTextSecondPart,
+                style = (leadingTextStyle2)
             )
         },
         startCurvedContent = {
             curvedText(
-                text = month,
+                text = timeTextFirstPart,
                 style = CurvedTextStyle(leadingTextStyle2)
             )
             curvedText(
-                text = day,
+                text = timeTextSecondPart,
                 style = CurvedTextStyle(leadingTextStyle2)
             )
         },
     )
-    Column(
-    modifier = Modifier
-    .selectableGroup(),
-    horizontalAlignment = Alignment.CenterHorizontally
-
-    ) {
-
-        Spacer(Modifier.padding(10.dp))
-        Text(buildAnnotatedString {
-            withStyle(style = SpanStyle(fontSize = 10.sp, color = Color.LightGray)) {
-                append("Today")
-            }
-        })
-        Spacer(Modifier.padding(1.dp))
-        Text(buildAnnotatedString {
-            withStyle(style = SpanStyle(fontSize = 18.sp, color = MaterialTheme.colors.primary)) {
-                append(String.format(
-                    "%.1f",
-                    minValue))
-            }
-            withStyle(style = SpanStyle(fontSize = 8.sp, color = MaterialTheme.colors.primary)) {
-                append("dB")
-            }
-            withStyle(style = SpanStyle(fontSize = 18.sp, color = MaterialTheme.colors.primary)) {
-                append(String.format(
-                    " - %.1f",
-                    maxValue))
-            }
-            withStyle(style = SpanStyle(fontSize = 8.sp, color = MaterialTheme.colors.primary)) {
-                append("dB")
-            }
-        })
-        Spacer(Modifier.padding(3.dp))
-        ChartLevels()
-        Spacer(Modifier.padding(3.dp))
-        Text(buildAnnotatedString {
-            withStyle(style = SpanStyle(fontSize = 12.sp, color = MaterialTheme.colors.secondaryVariant)) {
-                append("No warnings")
-            }
-        })
-    }
 }
+
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun ChartLevels()
-{
-    val hoursView = 24
-    val dbHelper = DBLevelStore(LocalContext.current)
+fun ChartLevels(weekView: Boolean, samples: ArrayList<DBLevelStore.SampleValue>) {
+    val hoursView = when (weekView) {
+        true -> 7
+        false -> 24
+    }
     val textMeasure = rememberTextMeasurer()
     Canvas(
         modifier = Modifier
@@ -134,18 +173,49 @@ fun ChartLevels()
         val pathEffect = PathEffect.dashPathEffect(floatArrayOf(3f, 8f), 0f)
         val chartHeight = size.height - 25
         val chartWidth = size.width
+        val startingOffset = ((chartWidth / hoursView) / 2f)
         val colorStops = arrayOf(
             0.0f to Color.Red,
             0.10f to Color.Yellow,
             0.99f to Color.Green
         )
         val brush = Brush.verticalGradient(colorStops = colorStops)
-        drawRect(brush, alpha = 0.2f, topLeft = Offset(0f,0f), size = Size(chartWidth, chartHeight))
-
-        for ( i in 0..hoursView ) {
-            drawCircle(Color.Gray, 3f,
-                Offset(0f + (chartWidth/hoursView)*i, chartHeight))
-
+        drawRect(
+            brush,
+            alpha = 0.2f,
+            topLeft = Offset(0f, 0f),
+            size = Size(chartWidth, chartHeight)
+        )
+        val days = "SMTWTFS"
+        for (i in 0 until hoursView) {
+            drawCircle(
+                Color.Gray, 3f,
+                Offset(startingOffset + (chartWidth / hoursView) * (i), chartHeight)
+            )
+            if (weekView) {
+                val text = buildAnnotatedString {
+                    withStyle(
+                        style = SpanStyle(
+                            color = Color.LightGray,
+                            fontSize = 6.sp,
+                            fontWeight = FontWeight.ExtraLight,
+                            fontStyle = FontStyle.Normal
+                        )
+                    ) {
+                        append(days[i].toString())
+                    }
+                }
+                drawText(
+                    textMeasurer = textMeasure,
+                    text = text,
+                    topLeft = Offset(
+                        startingOffset + (chartWidth / hoursView) * i - 4,
+                        size.height - 20
+                    )
+                )
+            }
+        }
+        if (!weekView) {
             val text = buildAnnotatedString {
                 withStyle(
                     style = SpanStyle(
@@ -185,34 +255,34 @@ fun ChartLevels()
             drawText(
                 textMeasurer = textMeasure,
                 text = text,
-                topLeft = Offset(0f, size.height-20)
+                topLeft = Offset(0f, size.height - 20)
             )
             drawText(
                 textMeasurer = textMeasure,
                 text = text2,
-                topLeft = Offset(size.width/2-15, size.height-20)
+                topLeft = Offset(size.width / 2 - 15, size.height - 20)
             )
             drawText(
                 textMeasurer = textMeasure,
                 text = text,
-                topLeft = Offset(size.width-35, size.height-20)
+                topLeft = Offset(size.width - 35, size.height - 20)
             )
             drawText(
                 textMeasurer = textMeasure,
                 text = text3,
-                topLeft = Offset(size.width*.25f-3, size.height-20)
+                topLeft = Offset(size.width * .25f - 3, size.height - 20)
             )
             drawText(
                 textMeasurer = textMeasure,
                 text = text3,
-                topLeft = Offset(size.width*.75f-3, size.height-20)
+                topLeft = Offset(size.width * .75f - 3, size.height - 20)
             )
         }
-        for ( i in 1..8) {
+        for (i in 1..8) {
             drawLine(
                 Color.LightGray,
-                Offset(0f , 0f+ (chartHeight/9)*i),
-                Offset(chartWidth, + (chartHeight/9)*i),
+                Offset(0f, 0f + (chartHeight / 9) * i),
+                Offset(chartWidth, +(chartHeight / 9) * i),
                 cap = StrokeCap.Round,
                 strokeWidth = 0.1f,
                 pathEffect = pathEffect
@@ -226,60 +296,155 @@ fun ChartLevels()
             strokeWidth = 1f
         )
 
-        val rc = dbHelper.getAllSamples(1000*60*60*hoursView)
-        Log.d(DBMonitor.TAG, "Got ${rc.size} items")
-        val cal = Calendar.getInstance()
-        var minValue = 120f
-        var maxValue = 0f
-        var hourMin = 99f
-        var hourMax = 0f
-        var hourCurrent = -1
-        rc.forEach {
-            cal.timeInMillis = it.timestamp
-            val hour = cal.get(Calendar.HOUR_OF_DAY)
-            val minute = cal.get(Calendar.MINUTE)
+        Log.d(DBMonitor.TAG, "Got ${samples.size} items")
+        if ( !weekView ) {
+            val cal = Calendar.getInstance()
+            var minValue = 120f
+            var maxValue = 0f
+            var hourMin = 99f
+            var hourMax = 0f
+            var hourCurrent = -1
+            samples.forEach {
+                cal.timeInMillis = it.timestamp
+                val hour = cal.get(Calendar.HOUR_OF_DAY)
+                val minute = cal.get(Calendar.MINUTE)
 
-            if ( hour != hourCurrent ) {
-                if ( hourCurrent != -1 ) {
-                    drawLine(
-                        Color(android.graphics.Color.parseColor("#88888888")),
-                        Offset((hourCurrent / 24f) * chartWidth, chartHeight - (hourMin/90f)*chartHeight),
-                        Offset((hourCurrent / 24f) * chartWidth, chartHeight - (hourMax/90f)*chartHeight),
-                        cap = StrokeCap.Round,
-                        strokeWidth = 8f
-                    )
+                if (hour != hourCurrent) {
+                    if (hourCurrent != -1) {
+                        drawLine(
+                            Color(android.graphics.Color.parseColor(GraphColor)),
+                            Offset(
+                                startingOffset + (hourCurrent / 24f) * chartWidth,
+                                chartHeight - (hourMin / 90f) * chartHeight
+                            ),
+                            Offset(
+                                startingOffset + (hourCurrent / 24f) * chartWidth,
+                                chartHeight - (hourMax / 90f) * chartHeight
+                            ),
+                            cap = StrokeCap.Round,
+                            strokeWidth = 8f
+                        )
+                    }
+                    hourCurrent = hour
+                    hourMin = 99f
+                    hourMax = 0f
                 }
-                hourCurrent = hour
-                hourMin = 99f
-                hourMax = 0f
+                val x = (hour / 24f)
+                val sampleValue = it.sampleValue - 10f
+                Log.d(
+                    DBMonitor.TAG,
+                    "sample ${it.sampleValue} / ${it.timestamp} taken $hour / $minute  $x"
+                )
+                drawCircle(
+                    Color.Green, 4f,
+                    Offset(
+                        startingOffset + +(chartWidth * (x)),
+                        chartHeight - (sampleValue / 90f) * chartHeight
+                    )
+                )
+                minValue = min(minValue, it.sampleValue)
+                maxValue = max(maxValue, it.sampleValue)
+                hourMin = min(hourMin, sampleValue)
+                hourMax = max(hourMax, sampleValue)
             }
-            val x = (hour/24f)
-            val sampleValue = it.sampleValue - 10f
-            Log.d(DBMonitor.TAG, "sample ${it.sampleValue} / ${it.timestamp} taken $hour / $minute  $x")
-            drawCircle(Color.Green, 4f,
-                Offset(0f + (chartWidth*(x)), chartHeight - (sampleValue/90f)*chartHeight))
-            minValue = min(minValue, it.sampleValue)
-            maxValue = max(maxValue, it.sampleValue)
-            hourMin = min(hourMin, sampleValue)
-            hourMax = max(hourMax, sampleValue)
+            drawLine(
+                Color(android.graphics.Color.parseColor(GraphColor)),
+                Offset(
+                    startingOffset + (hourCurrent / 24f) * chartWidth,
+                    chartHeight - (hourMin / 90f) * chartHeight
+                ),
+                Offset(
+                    startingOffset + (hourCurrent / 24f) * chartWidth,
+                    chartHeight - (hourMax / 90f) * chartHeight
+                ),
+                cap = StrokeCap.Round,
+                strokeWidth = 6f
+            )
+        } else {
+            val cal = Calendar.getInstance()
+            var minValue = 120f
+            var maxValue = 0f
+            var dayMin = 99f
+            var dayMax = 0f
+            var dayCurrent = -1
+            samples.forEach {
+                cal.timeInMillis = it.timestamp
+                val dow = cal.get(Calendar.DAY_OF_WEEK)-1
+
+                if (dow != dayCurrent) {
+                    if (dayCurrent != -1) {
+                        drawLine(
+                            Color(android.graphics.Color.parseColor(GraphColor)),
+                            Offset(
+                                startingOffset + (dayCurrent / 7f) * chartWidth,
+                                chartHeight - (dayMin / 90f) * chartHeight
+                            ),
+                            Offset(
+                                startingOffset + (dayCurrent / 7f) * chartWidth,
+                                chartHeight - (dayMax / 90f) * chartHeight
+                            ),
+                            cap = StrokeCap.Round,
+                            strokeWidth = 8f
+                        )
+                    }
+                    dayCurrent = dow
+                    dayMin = 99f
+                    dayMax = 0f
+                }
+                val x = (dow / 7f)
+                val sampleValue = it.sampleValue - 10f
+                Log.d(
+                    DBMonitor.TAG,
+                    "sample ${it.sampleValue} / ${it.timestamp} taken $dow  $x"
+                )
+                drawCircle(
+                    Color.Green, 4f,
+                    Offset(
+                        startingOffset + +(chartWidth * (x)),
+                        chartHeight - (sampleValue / 90f) * chartHeight
+                    )
+                )
+                minValue = min(minValue, it.sampleValue)
+                maxValue = max(maxValue, it.sampleValue)
+                dayMin = min(dayMin, sampleValue)
+                dayMax = max(dayMax, sampleValue)
+            }
+            drawLine(
+                Color(android.graphics.Color.parseColor(GraphColor)),
+                Offset(
+                    startingOffset + (dayCurrent / 7f) * chartWidth,
+                    chartHeight - (dayMin / 90f) * chartHeight
+                ),
+                Offset(
+                    startingOffset + (dayCurrent / 7f) * chartWidth,
+                    chartHeight - (dayMax / 90f) * chartHeight
+                ),
+                cap = StrokeCap.Round,
+                strokeWidth = 6f
+            )
         }
-        drawLine(
-            Color(android.graphics.Color.parseColor("#88888888")),
-            Offset((hourCurrent / 24f) * chartWidth, chartHeight - (hourMin/90f)*chartHeight),
-            Offset((hourCurrent / 24f) * chartWidth, chartHeight - (hourMax/90f)*chartHeight),
-            cap = StrokeCap.Round,
-            strokeWidth = 6f
-        )
 
-        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        if (weekView) {
+            val dow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1
+            val x = dow / 7f
+            drawLine(
+                Color.LightGray,
+                Offset(startingOffset + x * chartWidth, 10f),
+                Offset(startingOffset + x * chartWidth, chartHeight - 10),
+                cap = StrokeCap.Round,
+                strokeWidth = 2f
+            )
+        } else {
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
-        val x = (hour/24f)// + (minute/60f)*(1/24f)
-        drawLine(
-            Color.LightGray,
-            Offset(x*chartWidth, 10f),
-            Offset(x*chartWidth, chartHeight-10),
-            cap = StrokeCap.Round,
-            strokeWidth = 2f
-        )
+            val x = (hour / 24f)// + (minute/60f)*(1/24f)
+            drawLine(
+                Color.LightGray,
+                Offset(startingOffset + x * chartWidth, 10f),
+                Offset(startingOffset + x * chartWidth, chartHeight - 10),
+                cap = StrokeCap.Round,
+                strokeWidth = 2f
+            )
+        }
     }
 }

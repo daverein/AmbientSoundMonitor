@@ -98,18 +98,16 @@ class DBMonitor : ComponentActivity() {
                     modifier = Modifier.weight(1f),
                 ) {
                     VerticalPager(
-                        count = 2,
+                        count = 3,
                         state = pagerState,
                     ) {
                             page ->
                         when ( page ) {
-                            1 -> SamplingHistory(pagerState)
-                            0-> Page0(pagerState)
+                            2 -> SamplingHistory(true)
+                            1 -> SamplingHistory(false)
+                            0-> Page0()
                         }
                     }
-                    VerticalPagerIndicator(
-                        pagerState = pagerState
-                    )
                 }
             }
         }
@@ -119,7 +117,7 @@ class DBMonitor : ComponentActivity() {
 
     @OptIn(ExperimentalPagerApi::class)
     @Composable
-    fun Page0(pagerState: PagerState)
+    fun Page0()
     {
         LevelIndicator(levelIndicatorValue)
         Column(
