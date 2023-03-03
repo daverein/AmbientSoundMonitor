@@ -52,7 +52,7 @@ fun SamplingHistory(weekView: Boolean) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        Spacer(Modifier.padding(10.dp))
+        Spacer(Modifier.padding(12.dp))
         Text(buildAnnotatedString {
             withStyle(style = SpanStyle(fontSize = 10.sp, color = Color.LightGray)) {
                 if (weekView) {
@@ -246,6 +246,29 @@ fun ChartLevels(weekView: Boolean, samples: ArrayList<DBLevelStore.SampleValue>)
             strokeWidth = 1f
         )
 
+        if (weekView) {
+            val dow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1
+            val x = dow / 7f
+            drawLine(
+                Color.LightGray,
+                Offset(startingOffset + x * chartWidth, 10f),
+                Offset(startingOffset + x * chartWidth, chartHeight - 10),
+                cap = StrokeCap.Round,
+                strokeWidth = 2f
+            )
+        } else {
+            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+
+            val x = (hour / 24f)// + (minute/60f)*(1/24f)
+            drawLine(
+                Color.LightGray,
+                Offset(startingOffset + x * chartWidth, 10f),
+                Offset(startingOffset + x * chartWidth, chartHeight - 10),
+                cap = StrokeCap.Round,
+                strokeWidth = 2f
+            )
+        }
+
         Log.d(DBMonitor.TAG, "Got ${samples.size} items")
         if ( !weekView ) {
             val cal = Calendar.getInstance()
@@ -374,27 +397,6 @@ fun ChartLevels(weekView: Boolean, samples: ArrayList<DBLevelStore.SampleValue>)
             )
         }
 
-        if (weekView) {
-            val dow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1
-            val x = dow / 7f
-            drawLine(
-                Color.LightGray,
-                Offset(startingOffset + x * chartWidth, 10f),
-                Offset(startingOffset + x * chartWidth, chartHeight - 10),
-                cap = StrokeCap.Round,
-                strokeWidth = 2f
-            )
-        } else {
-            val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 
-            val x = (hour / 24f)// + (minute/60f)*(1/24f)
-            drawLine(
-                Color.LightGray,
-                Offset(startingOffset + x * chartWidth, 10f),
-                Offset(startingOffset + x * chartWidth, chartHeight - 10),
-                cap = StrokeCap.Round,
-                strokeWidth = 2f
-            )
-        }
     }
 }

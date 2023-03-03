@@ -25,9 +25,9 @@ fun isMyServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
 @Composable
 fun FormatTimeText(weekView: Boolean) {
     val leadingTextStyle =
-        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.primary, fontSize = 8.sp)
+        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.primary, fontSize = 10.sp)
     val leadingTextStyle2 =
-        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.secondary, fontSize = 8.sp)
+        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.secondary, fontSize = 10.sp)
     val timeTextFirstPart: String
     val timeTextSecondPart: String
     if (weekView) {
