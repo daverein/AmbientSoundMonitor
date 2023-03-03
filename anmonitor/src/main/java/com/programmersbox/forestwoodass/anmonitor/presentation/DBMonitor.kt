@@ -5,8 +5,10 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
 import android.content.pm.PackageManager.PERMISSION_GRANTED
 import android.os.Bundle
+import android.util.Log
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -28,6 +30,7 @@ import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.*
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
@@ -39,7 +42,10 @@ import com.google.accompanist.pager.*
 import com.programmersbox.forestwoodass.anmonitor.R
 import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
 import com.programmersbox.forestwoodass.anmonitor.presentation.theme.WearAppTheme
+import com.programmersbox.forestwoodass.anmonitor.services.SamplingService
+import com.programmersbox.forestwoodass.anmonitor.utils.FormatTimeText
 import com.programmersbox.forestwoodass.anmonitor.utils.SoundRecorder
+import com.programmersbox.forestwoodass.anmonitor.utils.isMyServiceRunning
 import kotlinx.coroutines.*
 import kotlin.math.min
 
@@ -60,6 +66,7 @@ class DBMonitor : ComponentActivity() {
 
     private var dbText by mutableStateOf(DBValues())
     private var isServiceStateActive: Boolean by mutableStateOf(false)
+    private var isSamplingServiceStateActive: Boolean by mutableStateOf(false)
     private var levelIndicatorValue: Float by mutableStateOf(0f)
     private var myMinimumValue = 128.0
 
@@ -90,6 +97,7 @@ class DBMonitor : ComponentActivity() {
     @OptIn(ExperimentalPagerApi::class)
     @Composable
     fun WearApp() {
+        isSamplingServiceStateActive = isMyServiceRunning(this, SamplingService::class.java)
         WearAppTheme {
             Column(Modifier.fillMaxSize()) {
                 val pagerState = rememberPagerState()
@@ -98,11 +106,12 @@ class DBMonitor : ComponentActivity() {
                     modifier = Modifier.weight(1f),
                 ) {
                     VerticalPager(
-                        count = 3,
+                        count = 4,
                         state = pagerState,
                     ) {
                             page ->
                         when ( page ) {
+                            3 -> ServicePage()
                             2 -> SamplingHistory(true)
                             1 -> SamplingHistory(false)
                             0-> Page0()
@@ -115,7 +124,7 @@ class DBMonitor : ComponentActivity() {
 
 
 
-    @OptIn(ExperimentalPagerApi::class)
+
     @Composable
     fun Page0()
     {
@@ -135,6 +144,116 @@ class DBMonitor : ComponentActivity() {
             )
         }
     }
+
+    @Composable
+    fun ServicePage()
+    {
+        FormatTimeText(false)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .selectableGroup(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+
+        ) {
+
+            Spacer(Modifier.padding(10.dp))
+            Text(
+                buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontSize = 14.sp, color = MaterialTheme.colors.secondary)) {
+                        append("Ambient Background")
+                    }
+                }
+            )
+            Text(
+                buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontSize = 14.sp, color = MaterialTheme.colors.secondary)) {
+                        append("Service Status")
+                    }
+                }
+            )
+
+            Spacer(Modifier.padding(10.dp))
+            Text(
+                buildAnnotatedString {
+                    withStyle(style = SpanStyle(fontSize = 14.sp, color = MaterialTheme.colors.primary, fontStyle = FontStyle.Italic)) {
+                        append(when ( isSamplingServiceStateActive ) {
+                            true -> "Running"
+                            false -> "Not running"
+                        })
+                    }
+                }
+            )
+            Spacer(Modifier.padding(15.dp))
+            ServiceButton(
+                onStateServiceChange = { isSamplingServiceStateActive = it },
+                isStateServiceActive = isSamplingServiceStateActive
+            )
+        }
+    }
+
+    @Composable
+    fun ServiceButton(
+        onStateServiceChange: (Boolean) -> Unit,
+        isStateServiceActive: Boolean
+    ) {
+        val context = LocalContext.current
+        Button(
+            modifier = Modifier
+                .padding(vertical = 0.dp)
+                .height(34.dp),
+            enabled = true,
+            onClick = {
+                if ( isMyServiceRunning(context, SamplingService::class.java) ) {
+                    try {
+                        val sampleServiceIntent = Intent()
+                        sampleServiceIntent.setPackage(SAMPLING_PACKAGE_NAME)
+                        sampleServiceIntent.action = "com.programmersbox.forestwoodass.anmonitor.STOP"
+                        sampleServiceIntent.addCategory("android.intent.category.DEFAULT")
+                        context.startService(sampleServiceIntent)
+                    } catch (ex: Exception) {
+                        // Oops.
+                    }
+                    onStateServiceChange(false)
+                } else {
+                    if (ActivityCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.RECORD_AUDIO
+                        ) != PERMISSION_GRANTED
+                    ) {
+                        requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    } else {
+                        val sampleServiceIntent = Intent()
+                        sampleServiceIntent.setPackage(SAMPLING_PACKAGE_NAME)
+                        sampleServiceIntent.action = "com.programmersbox.forestwoodass.anmonitor.START"
+                        sampleServiceIntent.addCategory(Intent.CATEGORY_DEFAULT)
+                        context.startForegroundService(sampleServiceIntent)
+
+                        Log.d(TAG, "checkToStartService: attempted to start foreground service")
+                        onStateServiceChange(true)
+                    }
+                }
+            },
+            colors = ButtonDefaults.buttonColors(
+                Color(repo.getSampleSecondaryColor())
+            ),
+            content = {
+                Text(
+                    modifier = Modifier.fillMaxWidth(0.5f),
+                    textAlign = TextAlign.Center,
+                    fontSize = 18.sp,
+                    color = MaterialTheme.colors.primary,
+                    text = if (isStateServiceActive) {
+                        stringResource(R.string.sampledb_stop)
+                    } else {
+                        stringResource(R.string.sampledb_start)
+                    }
+                )
+            }
+        )
+    }
+
 
     @Composable
     fun LevelIndicator(value: Float) {
@@ -242,7 +361,7 @@ class DBMonitor : ComponentActivity() {
             }
         )
 
-        Spacer(Modifier.padding(10.dp))
+        Spacer(Modifier.padding(5.dp))
     }
 
     @Preview(device = Devices.WEAR_OS_SMALL_ROUND, showSystemUi = true)
@@ -296,7 +415,7 @@ class DBMonitor : ComponentActivity() {
                     text = if (isStateServiceActive) {
                         stringResource(R.string.sampledb_stop)
                     } else {
-                        stringResource(R.string.sampledb_start)
+                        stringResource(R.string.sampledb_measure)
                     }
                 )
             }
@@ -365,6 +484,7 @@ class DBMonitor : ComponentActivity() {
         const val TAG = "DBMonitor"
         const val UPDATE_RATE_MS = 333L
         const val ANIMATE_RATE_MS = (UPDATE_RATE_MS.toInt()-50)
+        private const val SAMPLING_PACKAGE_NAME = "com.programmersbox.forestwoodass.anmonitor"
     }
 }
 

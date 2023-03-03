@@ -1,7 +1,6 @@
 package com.programmersbox.forestwoodass.anmonitor.presentation.tile
 
 import android.annotation.SuppressLint
-import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import androidx.compose.ui.graphics.Color
@@ -18,6 +17,7 @@ import com.google.android.horologist.tiles.SuspendingTileService
 import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
 import com.programmersbox.forestwoodass.anmonitor.services.SamplingService
 import com.programmersbox.forestwoodass.anmonitor.utils.MonitorDBLevels
+import com.programmersbox.forestwoodass.anmonitor.utils.isMyServiceRunning
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -104,7 +104,7 @@ class SamplingTile : SuspendingTileService() {
                     .build()
             )
         } else {
-            if ( isMyServiceRunning(SamplingService::class.java) ) {
+            if ( isMyServiceRunning(this, SamplingService::class.java) ) {
                 layout.setPrimaryChipContent(
                     CompactChip.Builder(context, " Measure ", emptyClickable, deviceParameters)
                         .setChipColors(
@@ -139,7 +139,7 @@ class SamplingTile : SuspendingTileService() {
             refreshing = true
         }
         if ( requestParams.state?.lastClickableId == REFRESH_CMD
-                && isMyServiceRunning(SamplingService::class.java) ) {
+                && isMyServiceRunning(this, SamplingService::class.java) ) {
             startForegroundService(Intent(this, SamplingService::class.java))
             refreshing = true
        }
@@ -159,17 +159,6 @@ class SamplingTile : SuspendingTileService() {
             .setResourcesVersion(RESOURCES_VERSION)
             .setTimeline(singleTileTimeline)
             .build()
-    }
-
-    @Suppress("DEPRECATION")
-    private fun isMyServiceRunning(serviceClass: Class<*>): Boolean {
-        val manager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
-        for (service in manager.getRunningServices(Int.MAX_VALUE)) {
-             if (serviceClass.name == service.service.className) {
-                return true
-            }
-        }
-        return false
     }
 
     companion object {

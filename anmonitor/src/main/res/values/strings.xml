@@ -5,7 +5,8 @@
     values-round/strings.xml for round devices.
     -->
     <string name="sampledb_stop">Stop</string>
-    <string name="sampledb_start">Measure</string>
+    <string name="sampledb_start">Start</string>
+    <string name="sampledb_measure">Measure</string>
     <string name="decibal_monitor">Sound Level Monitor</string>
     <string name="snooze">Mute for 1 Hour</string>
     <string name="snooze2">Mute for 2 Hours</string>

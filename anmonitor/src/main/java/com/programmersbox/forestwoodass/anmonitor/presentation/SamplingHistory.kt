@@ -1,7 +1,6 @@
 package com.programmersbox.forestwoodass.anmonitor.presentation
 
 
-import android.text.format.DateFormat
 import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -23,13 +22,12 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.material.*
 import com.google.accompanist.pager.*
 import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
+import com.programmersbox.forestwoodass.anmonitor.utils.FormatTimeText
 import kotlinx.coroutines.*
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.max
 import kotlin.math.min
 
@@ -105,54 +103,6 @@ fun SamplingHistory(weekView: Boolean) {
     }
 }
 
-@Composable
-private fun FormatTimeText(weekView: Boolean) {
-    val leadingTextStyle =
-        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.primary, fontSize = 8.sp)
-    val leadingTextStyle2 =
-        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.secondary, fontSize = 8.sp)
-    val timeTextFirstPart: String
-    val timeTextSecondPart: String
-    if (weekView) {
-        val dow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-        val startTime = Calendar.getInstance().timeInMillis - ((dow - 1) * (1000 * 60 * 60 * 24))
-        val endTime = Calendar.getInstance().timeInMillis + ((7 - dow) * (1000 * 60 * 60 * 24))
-        timeTextFirstPart = "${DateFormat.format("MMM dd", startTime)} - "
-        timeTextSecondPart = " ${DateFormat.format("MMM dd", endTime)}"
-    } else {
-        val month: String = DateFormat.format("MMM", Calendar.getInstance().timeInMillis).toString()
-        val day: String = DateFormat.format(" dd", Calendar.getInstance().timeInMillis).toString()
-        timeTextFirstPart = month
-        timeTextSecondPart = day
-    }
-
-    TimeText(
-        timeSource = TimeTextDefaults.timeSource(
-            DateFormat.getBestDateTimePattern(Locale.getDefault(), "hh:mm")
-        ),
-        timeTextStyle = leadingTextStyle,
-        startLinearContent = {
-            Text(
-                text = timeTextFirstPart,
-                style = (leadingTextStyle2)
-            )
-            Text(
-                text = timeTextSecondPart,
-                style = (leadingTextStyle2)
-            )
-        },
-        startCurvedContent = {
-            curvedText(
-                text = timeTextFirstPart,
-                style = CurvedTextStyle(leadingTextStyle2)
-            )
-            curvedText(
-                text = timeTextSecondPart,
-                style = CurvedTextStyle(leadingTextStyle2)
-            )
-        },
-    )
-}
 
 
 @OptIn(ExperimentalTextApi::class)
