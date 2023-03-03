@@ -64,7 +64,7 @@ class DBLevelStore  // creating a constructor for our database handler.
 
     fun getAllSamples(weekly: Boolean): ArrayList<SampleValue> {
         val beforeTime = when ( weekly ) {
-            false -> Calendar.getInstance().timeInMillis - ((Calendar.getInstance().get(Calendar.HOUR)*(1000*60*60))
+            false -> Calendar.getInstance().timeInMillis - ((Calendar.getInstance().get(Calendar.HOUR_OF_DAY)*(1000*60*60))
                                     +(Calendar.getInstance().get(Calendar.MINUTE)*(1000*60)))
             true -> {
                 (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)+1) * (1000*60*60*24)
