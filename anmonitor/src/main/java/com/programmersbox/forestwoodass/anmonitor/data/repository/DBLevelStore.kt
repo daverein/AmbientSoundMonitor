@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
 import java.util.Calendar
 
 class DBLevelStore  // creating a constructor for our database handler.
@@ -62,16 +63,34 @@ class DBLevelStore  // creating a constructor for our database handler.
         db.close()
     }
 
-    fun getAllSamples(weekly: Boolean): ArrayList<SampleValue> {
+    fun getAllSamples(weekly: Boolean, dow: Int): ArrayList<SampleValue> {
+        Log.d("DBLevelStore", "getting $dow and today is ${Calendar.getInstance().get(Calendar.DAY_OF_WEEK)}")
+        val db = this.readableDatabase
         val beforeTime = when ( weekly ) {
-            false -> Calendar.getInstance().timeInMillis - ((Calendar.getInstance().get(Calendar.HOUR_OF_DAY)*(1000*60*60))
-                                    +(Calendar.getInstance().get(Calendar.MINUTE)*(1000*60)))
+            false -> if ( dow == -1 ) {
+                    Calendar.getInstance().timeInMillis - ((Calendar.getInstance().get(Calendar.HOUR_OF_DAY)*(1000*60*60))
+                        +(Calendar.getInstance().get(Calendar.MINUTE)*(1000*60)))
+                    }else{
+                        if ( dow > Calendar.getInstance().get(Calendar.DAY_OF_WEEK) ) {
+                            Calendar.getInstance().timeInMillis
+                        } else {
+                            // Adjust this to include the current hour.
+                            val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+                            val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
+                            Calendar.getInstance().timeInMillis - (((Calendar.getInstance()
+                                .get(Calendar.DAY_OF_WEEK) - dow) ) * (1000 * 60 * 60 * 24) - ((1000 * 60 * 60 * (24-currentHour))))
+                        }
+                    }
             true -> {
-                (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)+1) * (1000*60*60*24)
+                Calendar.getInstance().timeInMillis - (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)+1) * (1000*60*60*24)
             }
         }
-        val db = this.readableDatabase
-        val cursorSamples: Cursor = db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime", null)
+        val afterTime = beforeTime.toLong() + (1000*60*60*24)
+        Log.d("DBLevelStore", "before ${beforeTime} and $afterTime and ${Calendar.getInstance().timeInMillis} ")
+        val cursorSamples: Cursor = when ( dow ) {
+            -1 -> db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime", null)
+            else -> db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime AND $DURATION_COL < $afterTime", null)
+        }
         val samplesModelArrayList: ArrayList<SampleValue> = ArrayList()
 
         if (cursorSamples.moveToFirst()) {

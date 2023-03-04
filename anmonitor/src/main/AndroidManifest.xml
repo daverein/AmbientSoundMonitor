@@ -38,6 +38,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".presentation.SampleDayDialog"
+            android:icon="@drawable/hearing_damage"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault">
+        </activity>
         <service
             android:name=".presentation.tile.SamplingTile"
             android:description="@string/tile_messaging_description"

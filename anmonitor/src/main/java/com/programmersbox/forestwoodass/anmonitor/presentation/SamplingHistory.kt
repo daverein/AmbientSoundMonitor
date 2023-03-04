@@ -1,9 +1,14 @@
 package com.programmersbox.forestwoodass.anmonitor.presentation
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
 import android.graphics.*
+import android.text.format.DateFormat
 import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.runtime.*
@@ -13,20 +18,27 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.*
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.*
+import androidx.wear.compose.material.dialog.Alert
+import androidx.wear.compose.material.dialog.Confirmation
 import com.google.accompanist.pager.*
+import com.programmersbox.forestwoodass.anmonitor.R
 import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
 import com.programmersbox.forestwoodass.anmonitor.utils.COLORS_RED_START
 import com.programmersbox.forestwoodass.anmonitor.utils.COLORS_YELLOW_START
 import com.programmersbox.forestwoodass.anmonitor.utils.FormatTimeText
 import kotlinx.coroutines.*
 import java.util.*
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 
@@ -34,17 +46,27 @@ private const val TAG = "SamplingHistory"
 private const val GraphColor = "#88888888"
 
 @Composable
-fun SamplingHistory(weekView: Boolean) {
+fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
+    val context = LocalContext.current
     val dbHelper = DBLevelStore(LocalContext.current)
-    val samples = dbHelper.getAllSamples(weekView)
+    val samples = dbHelper.getAllSamples(weekView, dow)
     Log.d(TAG, "Got ${samples.size} items")
+
+    if ( dow != -1 && samples.size == 0 ) {
+        ShowNoSamplesDialog(context)
+        return
+    }
     var minValue = 120f
     var maxValue = 0f
     samples.forEach {
         minValue = min(minValue, it.sampleValue)
         maxValue = max(maxValue, it.sampleValue)
     }
-    FormatTimeText(weekView)
+    if ( samples.size > 0 ) {
+        FormatTimeText(weekView, samples[0].timestamp, dowIn = dow)
+    } else {
+        FormatTimeText(weekView, dowIn = dow)
+    }
     Column(
         modifier = Modifier
             .selectableGroup(),
@@ -57,13 +79,22 @@ fun SamplingHistory(weekView: Boolean) {
                 if (weekView) {
                     append("This Week")
                 } else {
-                    append("Today")
+                    if ( dow == -1 ) {
+                        append("Today")
+                    } else {
+                        val cal = Calendar.getInstance()
+                        cal.timeInMillis = samples[0].timestamp
+                        append("${DateFormat.format("EEE MMM dd", cal)}")
+                    }
                 }
             }
         })
-        DrawSampleRange(minValue, maxValue)
-        Spacer(Modifier.padding(1.dp))
-        ChartLevels(weekView, samples)
+        if ( samples.size > 0 ) {
+            DrawSampleRange(minValue, maxValue)
+            Spacer(Modifier.padding(1.dp))
+            ChartLevels(weekView, dow, samples)
+
+        }
         Spacer(Modifier.padding(2.dp))
         Text(buildAnnotatedString {
             withStyle(
@@ -75,6 +106,42 @@ fun SamplingHistory(weekView: Boolean) {
                 append("No warnings")
             }
         })
+    }
+}
+
+@Composable
+private fun ShowNoSamplesDialog(context: Context) {
+    Alert(
+        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Top),
+        contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 52.dp),
+        icon = {
+            Icon(
+                painter = painterResource(id = R.drawable.hearing_damage),
+                contentDescription = "Hearing Damage",
+                modifier = Modifier
+                    .size(16.dp)
+                    .wrapContentSize(align = Alignment.Center),
+            )
+        },
+        title = { Text(text = "Ambient Monitor", textAlign = TextAlign.Center) },
+        message = {
+            Text(
+                text = "No data expires for that period",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.body2
+            )
+        },
+    ) {
+        item {
+            Chip(
+                label = { Text("Close") },
+                onClick = {
+                    val activity = (context as? Activity)
+                    activity?.finish()
+                },
+                colors = ChipDefaults.primaryChipColors(),
+            )
+        }
     }
 }
 
@@ -109,11 +176,12 @@ private fun DrawSampleRange(minValue: Float, maxValue: Float) {
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun ChartLevels(weekView: Boolean, samples: ArrayList<DBLevelStore.SampleValue>) {
+fun ChartLevels(weekView: Boolean, dow: Int, samples: ArrayList<DBLevelStore.SampleValue>) {
     val hoursView = when (weekView) {
         true -> 7
         false -> 24
     }
+    val context = LocalContext.current
     val textMeasure = rememberTextMeasurer()
     Canvas(
         modifier = Modifier
@@ -121,6 +189,20 @@ fun ChartLevels(weekView: Boolean, samples: ArrayList<DBLevelStore.SampleValue>)
             .height(75.dp)
             .padding(PaddingValues(15.dp, 0.dp))
             .background(MaterialTheme.colors.background)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { tapOffset ->
+                        // When the user taps on the Canvas, you can
+                        // check if the tap offset is in one of the
+                        // tracked Rects.
+                        if ( weekView ) {
+                            val dow = floor((tapOffset.x.toFloat()/size.width.toFloat())*7).toInt()
+                            Log.d(TAG, "Tapped offset = ${tapOffset.x}  days back = $dow")
+                            context.startActivity(Intent(context, SampleDayDialog::class.java).putExtra("DOW", dow))
+                        }
+                    }
+                )
+            }
     ) {
         val chartHeight = size.height - 25
         val chartWidth = size.width
@@ -134,8 +216,9 @@ fun ChartLevels(weekView: Boolean, samples: ArrayList<DBLevelStore.SampleValue>)
             textMeasure
         )
 
-
-        drawTodayLine(weekView, startingOffset, chartWidth, chartHeight)
+        if ( dow ==  -1 ) {
+            drawTodayLine(weekView, startingOffset, chartWidth, chartHeight)
+        }
 
         Log.d(DBMonitor.TAG, "Got ${samples.size} items")
         if ( !weekView ) {
@@ -161,6 +244,7 @@ private fun DrawScope.drawWeeklyChart(
     samples.forEach {
         cal.timeInMillis = it.timestamp
         val dow = cal.get(Calendar.DAY_OF_WEEK) - 1
+        val hod = cal.get(Calendar.HOUR_OF_DAY)
 
         if (dow != dayCurrent) {
             if (dayCurrent != -1) {
@@ -182,12 +266,9 @@ private fun DrawScope.drawWeeklyChart(
             dayMin = 99f
             dayMax = 0f
         }
-        val x = (dow / 7f)
+        val x: Float = ((dow / 7f)   )//+ floor((hod/8.0)) *(1/21f)).toFloat()
         val sampleValue = it.sampleValue - 10f
-        Log.d(
-            DBMonitor.TAG,
-            "sample ${it.sampleValue} / ${it.timestamp} taken $dow  $x"
-        )
+
         val ballColor = getBallColor(it)
         drawCircle(
             ballColor, 4f,
@@ -266,10 +347,7 @@ private fun DrawScope.drawDailyChart(
         }
         val x = (hour / 24f)
         val sampleValue = it.sampleValue - 10f
-        Log.d(
-            DBMonitor.TAG,
-            "sample ${it.sampleValue} / ${it.timestamp} taken $hour / $minute  $x"
-        )
+
         val ballColor = getBallColor(it)
 
         drawCircle(

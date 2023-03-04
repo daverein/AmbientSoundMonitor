@@ -27,7 +27,7 @@ fun isMyServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
 }
 
 @Composable
-fun FormatTimeText(weekView: Boolean) {
+fun FormatTimeText(weekView: Boolean, timestamp: Long = 0L, dowIn: Int = -1) {
     val leadingTextStyle =
         TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.primary, fontSize = 11.sp)
     val leadingTextStyle2 =
@@ -41,8 +41,24 @@ fun FormatTimeText(weekView: Boolean) {
         timeTextFirstPart = "${DateFormat.format("MMM dd", startTime)} - "
         timeTextSecondPart = " ${DateFormat.format("MMM dd", endTime)}"
     } else {
-        val month: String = DateFormat.format("MMM", Calendar.getInstance().timeInMillis).toString()
-        val day: String = DateFormat.format(" dd", Calendar.getInstance().timeInMillis).toString()
+        val cal: Calendar
+        if ( timestamp == 0L) {
+            cal = Calendar.getInstance()
+        } else {
+            if ( dowIn != -1) {
+                // Don't show the date here
+                TimeText(
+                    timeSource = TimeTextDefaults.timeSource(
+                        DateFormat.getBestDateTimePattern(Locale.getDefault(), "hh:mm")
+                    )
+                )
+                return
+            }
+            cal = Calendar.getInstance()
+            cal.timeInMillis = timestamp
+        }
+        val month: String = DateFormat.format("MMM", cal.timeInMillis).toString()
+        val day: String = DateFormat.format(" dd", cal.timeInMillis).toString()
         timeTextFirstPart = month
         timeTextSecondPart = day
     }
