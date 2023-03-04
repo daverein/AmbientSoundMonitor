@@ -114,7 +114,7 @@ class DBMonitor : ComponentActivity() {
                             3 -> ServicePage()
                             2 -> SamplingHistory(true)
                             1 -> SamplingHistory(false)
-                            0-> Page0()
+                            0 -> Page0()
                         }
                     }
                 }
