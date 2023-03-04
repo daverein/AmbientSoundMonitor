@@ -1,12 +1,10 @@
 package com.programmersbox.forestwoodass.anmonitor.utils
 
 import android.content.Context
-import android.util.Log
-import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
 import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
 import java.util.*
 
-class MonitorDBLevels(context: Context) {
+class MonitorDBLevels(context: Context, private val warningHelper: WarningHelper) {
 
     enum class DbDoseLength(
         val dbLevel: Float = 0.0f,
@@ -48,8 +46,6 @@ class MonitorDBLevels(context: Context) {
     }
 
     private val repo = SamplingSoundDataRepository(context)
-    private val notificationHelper = NotificationHelper(context)
-    private val dbHelper = DBLevelStore(context)
     private var lastMaxDB: Float = 0.0f
     private var lastTimestamp: Long = 0L
     private var startLevelsTimestamp: Long = 0L
@@ -86,9 +82,6 @@ class MonitorDBLevels(context: Context) {
     private fun determineWarningLevel(): Long {
         var rc = DEFAULT_WAIT_TIME
         if (lastMaxDB > 0.0) {
-            repo.putSampleDBValue(lastMaxDB)
-            // Record level and timestamp here
-            dbHelper.addNewSample(lastMaxDB)
 
             if (lastMaxDB > minAlertLevel) {
                 if (startLevelsTimestamp == 0L) {
@@ -113,18 +106,12 @@ class MonitorDBLevels(context: Context) {
 
     private fun determineShowNotification() {
         if (showNotification) {
-            if (repo.getMuteNotificationsUntil() < Calendar.getInstance().timeInMillis) {
-                notificationHelper.showNotification(
-                    lastMaxDB,
-                    Calendar.getInstance().timeInMillis - startLevelsTimestamp
-                )
-                lastNotificationTime = Calendar.getInstance().timeInMillis
-            } else {
-                Log.d(
-                    TAG,
-                    "Notifications still muted for another ${(repo.getMuteNotificationsUntil() - Calendar.getInstance().timeInMillis)} ms"
-                )
-            }
+            warningHelper.showNotification(
+                lastMaxDB,
+                Calendar.getInstance().timeInMillis,
+                Calendar.getInstance().timeInMillis - startLevelsTimestamp
+            )
+            lastNotificationTime = Calendar.getInstance().timeInMillis
         }
     }
 

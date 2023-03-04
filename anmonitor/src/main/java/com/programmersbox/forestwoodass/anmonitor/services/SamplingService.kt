@@ -13,8 +13,11 @@ import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
+import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
 import com.programmersbox.forestwoodass.anmonitor.presentation.tile.SamplingTile.Companion.refreshTile
 import com.programmersbox.forestwoodass.anmonitor.utils.MonitorDBLevels
+import com.programmersbox.forestwoodass.anmonitor.utils.NotificationHelper
 import com.programmersbox.forestwoodass.anmonitor.utils.SoundRecorder
 import kotlinx.coroutines.*
 import java.time.Duration
@@ -28,11 +31,13 @@ class SamplingService : Service() {
     private lateinit var runningService: Job
     private val serviceJob = Job()
     private val serviceScope = CoroutineScope(Dispatchers.Default + serviceJob)
+    private val repo: SamplingSoundDataRepository by lazy { SamplingSoundDataRepository(this) }
+    private val dbHelper: DBLevelStore by lazy { DBLevelStore(this) }
 
     override fun onCreate() {
         super.onCreate()
         keyguardManager =getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
-        monitorDB = MonitorDBLevels(this)
+        monitorDB = MonitorDBLevels(this, NotificationHelper(this))
 
         val channel = NotificationChannel(
             CHANNEL_ID,
@@ -107,6 +112,9 @@ class SamplingService : Service() {
             if (::soundRecorder.isInitialized && !isCallActive(baseContext)
                 && !keyguardManager.isDeviceLocked) {
                 startSample()
+                // Record level and timestamp here
+                repo.putSampleDBValue(soundRecorder.maxDB.toFloat())
+                dbHelper.addNewSample(soundRecorder.maxDB.toFloat())
                 monitorDB.recordDBLevel(soundRecorder.maxDB.toFloat())
             } else {
                 monitorDB.reset()

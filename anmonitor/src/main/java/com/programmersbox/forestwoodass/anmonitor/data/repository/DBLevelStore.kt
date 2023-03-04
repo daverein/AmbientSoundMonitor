@@ -14,8 +14,7 @@ class DBLevelStore  // creating a constructor for our database handler.
     data class SampleValue(
         var sampleValue: Float = 0.0f,
         var timestamp: Long = 0L
-    ) {
-    }
+    )
     // below method is for creating a database by running a sqlite query
     override fun onCreate(db: SQLiteDatabase) {
         // on below line we are creating
@@ -64,7 +63,6 @@ class DBLevelStore  // creating a constructor for our database handler.
     }
 
     fun getAllSamples(weekly: Boolean, dow: Int): ArrayList<SampleValue> {
-        Log.d("DBLevelStore", "getting $dow and today is ${Calendar.getInstance().get(Calendar.DAY_OF_WEEK)}")
         val db = this.readableDatabase
         val beforeTime = when ( weekly ) {
             false -> if ( dow == -1 ) {
@@ -77,16 +75,16 @@ class DBLevelStore  // creating a constructor for our database handler.
                             // Adjust this to include the current hour.
                             val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
                             val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
-                            Calendar.getInstance().timeInMillis - (((Calendar.getInstance()
-                                .get(Calendar.DAY_OF_WEEK) - dow) ) * (1000 * 60 * 60 * 24) - ((1000 * 60 * 60 * (24-currentHour))))
+                            Calendar.getInstance().timeInMillis - ((Calendar.getInstance()
+                                .get(Calendar.DAY_OF_WEEK) - dow ) * (1000 * 60 * 60 * 24) - (1000 * 60 * 60 * (24-currentHour)))
                         }
                     }
             true -> {
                 Calendar.getInstance().timeInMillis - (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)+1) * (1000*60*60*24)
             }
         }
-        val afterTime = beforeTime.toLong() + (1000*60*60*24)
-        Log.d("DBLevelStore", "before ${beforeTime} and $afterTime and ${Calendar.getInstance().timeInMillis} ")
+        val afterTime = beforeTime + (1000*60*60*24)
+        Log.d("DBLevelStore", "before $beforeTime and $afterTime and ${Calendar.getInstance().timeInMillis} ")
         val cursorSamples: Cursor = when ( dow ) {
             -1 -> db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime", null)
             else -> db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime AND $DURATION_COL < $afterTime", null)

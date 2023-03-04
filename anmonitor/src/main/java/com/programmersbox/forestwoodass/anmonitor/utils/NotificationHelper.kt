@@ -12,15 +12,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import com.programmersbox.forestwoodass.anmonitor.R
+import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
 import com.programmersbox.forestwoodass.anmonitor.presentation.DBMonitor
+import java.util.*
 
 
 const val MY_NOTIFICATION_ID = 101
 
-class NotificationHelper(val context: Context) {
+class NotificationHelper(val context: Context): WarningHelper {
     private val metrics: DisplayMetrics = context.resources.displayMetrics
     private val screenWidth: Int = metrics.widthPixels
-
+    private val repo: SamplingSoundDataRepository by lazy { SamplingSoundDataRepository(context) }
     init {
         createNotificationChannel()
     }
@@ -112,7 +114,14 @@ class NotificationHelper(val context: Context) {
         return bitmap
     }
 
-    fun showNotification(maxdb: Float, timeInLoudEnvMS: Long) {
+    override fun showNotification(value: Float, timestamp: Long, timeInLoudEnvMS: Long) {
+        if ((repo.getMuteNotificationsUntil() >= Calendar.getInstance().timeInMillis)) {
+            Log.d(
+                TAG,
+                "Notifications still muted for another ${(repo.getMuteNotificationsUntil() - Calendar.getInstance().timeInMillis)} ms"
+            )
+            return
+        }
         val notificationManager =
             context.getSystemService(Service.NOTIFICATION_SERVICE) as NotificationManager?
         val intent = Intent(context, DBMonitor::class.java)
@@ -131,9 +140,9 @@ class NotificationHelper(val context: Context) {
         val snoozePendingIntent2 =
             PendingIntent.getBroadcast(context, 120, snoozeIntent2, PendingIntent.FLAG_IMMUTABLE)
 
-        val dbString = String.format("%.1f", maxdb)
+        val dbString = String.format("%.1f", value)
 
-        val bitmap = generateBitmapImage(maxdb)
+        val bitmap = generateBitmapImage(value)
 
         val body = String.format(
             context.getString(R.string.sampling_notification_body),

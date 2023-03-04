@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.*
 import androidx.wear.compose.material.dialog.Alert
-import androidx.wear.compose.material.dialog.Confirmation
 import com.google.accompanist.pager.*
 import com.programmersbox.forestwoodass.anmonitor.R
 import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
@@ -196,9 +195,9 @@ fun ChartLevels(weekView: Boolean, dow: Int, samples: ArrayList<DBLevelStore.Sam
                         // check if the tap offset is in one of the
                         // tracked Rects.
                         if ( weekView ) {
-                            val dow = floor((tapOffset.x.toFloat()/size.width.toFloat())*7).toInt()
-                            Log.d(TAG, "Tapped offset = ${tapOffset.x}  days back = $dow")
-                            context.startActivity(Intent(context, SampleDayDialog::class.java).putExtra("DOW", dow))
+                            val mDow = floor((tapOffset.x.toFloat()/size.width.toFloat())*7).toInt()
+                            Log.d(TAG, "Tapped offset = ${tapOffset.x}  days back = $mDow")
+                            context.startActivity(Intent(context, SampleDayDialog::class.java).putExtra("DOW", mDow))
                         }
                     }
                 )
@@ -266,7 +265,7 @@ private fun DrawScope.drawWeeklyChart(
             dayMin = 99f
             dayMax = 0f
         }
-        val x: Float = ((dow / 7f)   )//+ floor((hod/8.0)) *(1/21f)).toFloat()
+        val x: Float = ((dow / 7f)   + floor((hod/8.0)) *(1/21f)).toFloat()
         val sampleValue = it.sampleValue - 10f
 
         val ballColor = getBallColor(it)

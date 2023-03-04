@@ -61,6 +61,7 @@
         </service>
         <service android:name=".services.SamplingService"
             android:foregroundServiceType="microphone"
+            android:process=":ambient_noise_monitor"
             android:permission="android.permission.RECORD_AUDIO"
             android:exported="true" >
             <intent-filter>

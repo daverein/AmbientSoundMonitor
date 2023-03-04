@@ -31,7 +31,7 @@ fun FormatTimeText(weekView: Boolean, timestamp: Long = 0L, dowIn: Int = -1) {
     val leadingTextStyle =
         TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.primary, fontSize = 11.sp)
     val leadingTextStyle2 =
-        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.secondaryVariant, fontSize = 11.sp)
+        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.secondary, fontSize = 11.sp)
     val timeTextFirstPart: String
     val timeTextSecondPart: String
     if (weekView) {

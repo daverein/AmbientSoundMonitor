@@ -14,7 +14,7 @@ class MuteNotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val repo = SamplingSoundDataRepository(context)
         val launchCode = intent.getIntExtra(Notification.EXTRA_NOTIFICATION_ID, 0)
-        Log.d("MuteNotificationReceiver", "Mute the notification ${launchCode}")
+        Log.d("MuteNotificationReceiver", "Mute the notification $launchCode")
         repo.muteNotificationsUntil(Calendar.getInstance().timeInMillis + (60 * 1000 * launchCode))
 
         val notificationManager =
