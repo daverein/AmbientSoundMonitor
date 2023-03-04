@@ -37,6 +37,7 @@ import com.programmersbox.forestwoodass.anmonitor.utils.COLORS_YELLOW_START
 import com.programmersbox.forestwoodass.anmonitor.utils.FormatTimeText
 import kotlinx.coroutines.*
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -73,21 +74,7 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
     ) {
 
         Spacer(Modifier.padding(12.dp))
-        Text(buildAnnotatedString {
-            withStyle(style = SpanStyle(fontSize = 12.sp, color = Color.LightGray)) {
-                if (weekView) {
-                    append("This Week")
-                } else {
-                    if ( dow == -1 ) {
-                        append("Today")
-                    } else {
-                        val cal = Calendar.getInstance()
-                        cal.timeInMillis = samples[0].timestamp
-                        append("${DateFormat.format("EEE MMM dd", cal)}")
-                    }
-                }
-            }
-        })
+        DrawChartTitle(weekView, dow, samples)
         if ( samples.size > 0 ) {
             DrawSampleRange(minValue, maxValue)
             Spacer(Modifier.padding(1.dp))
@@ -106,6 +93,29 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
             }
         })
     }
+}
+
+@Composable
+private fun DrawChartTitle(
+    weekView: Boolean,
+    dow: Int,
+    samples: ArrayList<DBLevelStore.SampleValue>
+) {
+    Text(buildAnnotatedString {
+        withStyle(style = SpanStyle(fontSize = 12.sp, color = Color.LightGray)) {
+            if (weekView) {
+                append("This Week")
+            } else {
+                if (dow == -1) {
+                    append("Today")
+                } else {
+                    val cal = Calendar.getInstance()
+                    cal.timeInMillis = samples[0].timestamp
+                    append("${DateFormat.format("EEE MMM dd", cal)}")
+                }
+            }
+        }
+    })
 }
 
 @Composable
@@ -195,7 +205,7 @@ fun ChartLevels(weekView: Boolean, dow: Int, samples: ArrayList<DBLevelStore.Sam
                         // check if the tap offset is in one of the
                         // tracked Rects.
                         if ( weekView ) {
-                            val mDow = floor((tapOffset.x.toFloat()/size.width.toFloat())*7).toInt()
+                            val mDow = floor((tapOffset.x /size.width.toFloat())*7).toInt()
                             Log.d(TAG, "Tapped offset = ${tapOffset.x}  days back = $mDow")
                             context.startActivity(Intent(context, SampleDayDialog::class.java).putExtra("DOW", mDow))
                         }
@@ -223,7 +233,7 @@ fun ChartLevels(weekView: Boolean, dow: Int, samples: ArrayList<DBLevelStore.Sam
         if ( !weekView ) {
             drawDailyChart(samples, startingOffset, chartWidth, chartHeight)
         } else {
-            drawWeeklyChart(samples, startingOffset, chartWidth, chartHeight)
+            drawWeeklyChart(samples, startingOffset/3, chartWidth, chartHeight)
         }
     }
 }
@@ -240,21 +250,25 @@ private fun DrawScope.drawWeeklyChart(
     var dayMin = 99f
     var dayMax = 0f
     var dayCurrent = -1
+    var dayPart = -1.0
     samples.forEach {
         cal.timeInMillis = it.timestamp
         val dow = cal.get(Calendar.DAY_OF_WEEK) - 1
         val hod = cal.get(Calendar.HOUR_OF_DAY)
+        val dp = floor(hod/8.0)
 
-        if (dow != dayCurrent) {
-            if (dayCurrent != -1) {
+        if (dow != dayCurrent || dayPart != dp) {
+            if (dayCurrent != -1 && dayPart != -1.0) {
+                val x: Float = ((dayCurrent / 7f)   + dayPart *(1/21f)).toFloat()
+                Log.d(TAG, "X = $x  $dayCurrent  and $dayPart with $dayMin / $dayMax")
                 drawLine(
                     Color(android.graphics.Color.parseColor(GraphColor)),
                     Offset(
-                        startingOffset + (dayCurrent / 7f) * chartWidth,
+                        startingOffset + (x) * chartWidth,
                         chartHeight - (dayMin / 90f) * chartHeight
                     ),
                     Offset(
-                        startingOffset + (dayCurrent / 7f) * chartWidth,
+                        startingOffset + (x) * chartWidth,
                         chartHeight - (dayMax / 90f) * chartHeight
                     ),
                     cap = StrokeCap.Round,
@@ -262,10 +276,11 @@ private fun DrawScope.drawWeeklyChart(
                 )
             }
             dayCurrent = dow
+            dayPart = dp
             dayMin = 99f
             dayMax = 0f
         }
-        val x: Float = ((dow / 7f)   + floor((hod/8.0)) *(1/21f)).toFloat()
+        val x: Float = ((dow / 7f)   + floor(hod/8.0) *(1/21f)).toFloat()
         val sampleValue = it.sampleValue - 10f
 
         val ballColor = getBallColor(it)
@@ -281,14 +296,17 @@ private fun DrawScope.drawWeeklyChart(
         dayMin = min(dayMin, sampleValue)
         dayMax = max(dayMax, sampleValue)
     }
+
+    val x = (dayCurrent / 7f)   + (dayPart *(1/21f))
+    Log.d(TAG, "X = $x  $dayCurrent  and $dayPart  with $dayMin / $dayMax")
     drawLine(
         Color(android.graphics.Color.parseColor(GraphColor)),
         Offset(
-            startingOffset + (dayCurrent / 7f) * chartWidth,
+            (startingOffset + (x) * chartWidth).toFloat(),
             chartHeight - (dayMin / 90f) * chartHeight
         ),
         Offset(
-            startingOffset + (dayCurrent / 7f) * chartWidth,
+            (startingOffset + (x) * chartWidth).toFloat(),
             chartHeight - (dayMax / 90f) * chartHeight
         ),
         cap = StrokeCap.Round,
@@ -322,7 +340,6 @@ private fun DrawScope.drawDailyChart(
     samples.forEach {
         cal.timeInMillis = it.timestamp
         val hour = cal.get(Calendar.HOUR_OF_DAY)
-        val minute = cal.get(Calendar.MINUTE)
 
         if (hour != hourCurrent) {
             if (hourCurrent != -1) {
