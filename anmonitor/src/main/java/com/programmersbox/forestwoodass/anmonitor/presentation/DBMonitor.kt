@@ -43,9 +43,7 @@ import com.programmersbox.forestwoodass.anmonitor.R
 import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
 import com.programmersbox.forestwoodass.anmonitor.presentation.theme.WearAppTheme
 import com.programmersbox.forestwoodass.anmonitor.services.SamplingService
-import com.programmersbox.forestwoodass.anmonitor.utils.FormatTimeText
-import com.programmersbox.forestwoodass.anmonitor.utils.SoundRecorder
-import com.programmersbox.forestwoodass.anmonitor.utils.isMyServiceRunning
+import com.programmersbox.forestwoodass.anmonitor.utils.*
 import kotlinx.coroutines.*
 import kotlin.math.min
 
@@ -258,9 +256,9 @@ class DBMonitor : ComponentActivity() {
     @Composable
     fun LevelIndicator(value: Float) {
         val colorStops = arrayOf(
-            0.0f to Color.Green,
-            0.7f to Color.Yellow,
-            0.85f to Color.Red
+            COLORS_GREEN_START to Color.Green,
+            COLORS_YELLOW_START to Color.Yellow,
+            COLORS_RED_START to Color.Red
         )
         val sweepLength = 250f
         val startAngle = -215f

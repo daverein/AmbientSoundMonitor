@@ -10,6 +10,10 @@ import androidx.wear.compose.foundation.CurvedTextStyle
 import androidx.wear.compose.material.*
 import java.util.*
 
+const val COLORS_GREEN_START = 0.0f
+const val COLORS_YELLOW_START = 0.70f
+const val COLORS_RED_START = 0.85f
+
 @Suppress("DEPRECATION")
 fun isMyServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
     val manager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
@@ -25,9 +29,9 @@ fun isMyServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
 @Composable
 fun FormatTimeText(weekView: Boolean) {
     val leadingTextStyle =
-        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.primary, fontSize = 9.sp)
+        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.primary, fontSize = 11.sp)
     val leadingTextStyle2 =
-        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.secondary, fontSize = 9.sp)
+        TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.secondaryVariant, fontSize = 11.sp)
     val timeTextFirstPart: String
     val timeTextSecondPart: String
     if (weekView) {

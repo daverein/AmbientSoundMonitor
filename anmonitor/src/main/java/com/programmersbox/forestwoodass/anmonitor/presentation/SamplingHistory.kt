@@ -11,7 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.platform.LocalContext
@@ -23,6 +22,8 @@ import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.*
 import com.google.accompanist.pager.*
 import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
+import com.programmersbox.forestwoodass.anmonitor.utils.COLORS_RED_START
+import com.programmersbox.forestwoodass.anmonitor.utils.COLORS_YELLOW_START
 import com.programmersbox.forestwoodass.anmonitor.utils.FormatTimeText
 import kotlinx.coroutines.*
 import java.util.*
@@ -52,7 +53,7 @@ fun SamplingHistory(weekView: Boolean) {
 
         Spacer(Modifier.padding(12.dp))
         Text(buildAnnotatedString {
-            withStyle(style = SpanStyle(fontSize = 10.sp, color = Color.LightGray)) {
+            withStyle(style = SpanStyle(fontSize = 12.sp, color = Color.LightGray)) {
                 if (weekView) {
                     append("This Week")
                 } else {
@@ -60,16 +61,15 @@ fun SamplingHistory(weekView: Boolean) {
                 }
             }
         })
-        Spacer(Modifier.padding(1.dp))
         DrawSampleRange(minValue, maxValue)
-        Spacer(Modifier.padding(3.dp))
+        Spacer(Modifier.padding(1.dp))
         ChartLevels(weekView, samples)
-        Spacer(Modifier.padding(3.dp))
+        Spacer(Modifier.padding(2.dp))
         Text(buildAnnotatedString {
             withStyle(
                 style = SpanStyle(
                     fontSize = 12.sp,
-                    color = MaterialTheme.colors.secondaryVariant
+                    color = MaterialTheme.colors.secondary
                 )
             ) {
                 append("No warnings")
@@ -81,7 +81,7 @@ fun SamplingHistory(weekView: Boolean) {
 @Composable
 private fun DrawSampleRange(minValue: Float, maxValue: Float) {
     Text(buildAnnotatedString {
-        withStyle(style = SpanStyle(fontSize = 18.sp, color = MaterialTheme.colors.primary)) {
+        withStyle(style = SpanStyle(fontSize = 21.sp, color = MaterialTheme.colors.primary)) {
             append(
                 String.format(
                     "%.1f",
@@ -92,7 +92,7 @@ private fun DrawSampleRange(minValue: Float, maxValue: Float) {
         withStyle(style = SpanStyle(fontSize = 8.sp, color = MaterialTheme.colors.primary)) {
             append("dB")
         }
-        withStyle(style = SpanStyle(fontSize = 18.sp, color = MaterialTheme.colors.primary)) {
+        withStyle(style = SpanStyle(fontSize = 21.sp, color = MaterialTheme.colors.primary)) {
             append(
                 String.format(
                     " - %.1f",
@@ -188,7 +188,7 @@ private fun DrawScope.drawWeeklyChart(
             DBMonitor.TAG,
             "sample ${it.sampleValue} / ${it.timestamp} taken $dow  $x"
         )
-        val ballColor = if ( it.sampleValue < 70 ) {Color.Green} else if ( it.sampleValue < 85 ) {Color.Yellow}else{Color.Red}
+        val ballColor = getBallColor(it)
         drawCircle(
             ballColor, 4f,
             Offset(
@@ -214,6 +214,16 @@ private fun DrawScope.drawWeeklyChart(
         cap = StrokeCap.Round,
         strokeWidth = 6f
     )
+}
+
+private fun getBallColor(it: DBLevelStore.SampleValue): Color {
+    return if (it.sampleValue < COLORS_YELLOW_START * 100f) {
+        Color.Green
+    } else if (it.sampleValue < COLORS_RED_START * 100f) {
+        Color.Yellow
+    } else {
+        Color.Red
+    }
 }
 
 
@@ -260,7 +270,7 @@ private fun DrawScope.drawDailyChart(
             DBMonitor.TAG,
             "sample ${it.sampleValue} / ${it.timestamp} taken $hour / $minute  $x"
         )
-        val ballColor = if ( it.sampleValue < 70 ) {Color.Green} else if ( it.sampleValue < 85 ) {Color.Yellow}else{Color.Red}
+        val ballColor = getBallColor(it)
 
         drawCircle(
             ballColor, 4f,
@@ -300,7 +310,6 @@ private fun DrawScope.drawBaseChart(
     textMeasure: TextMeasurer
 ) {
 
-    val pathEffect = PathEffect.dashPathEffect(floatArrayOf(3f, 8f), 0f)
     val days = "SMTWTFS"
     for (i in 0 until hoursView) {
         drawCircle(
@@ -313,7 +322,7 @@ private fun DrawScope.drawBaseChart(
                     style = SpanStyle(
                         color = Color.LightGray,
                         fontSize = 8.sp,
-                        fontWeight = FontWeight.ExtraLight,
+                        fontWeight = FontWeight.Normal,
                         fontStyle = FontStyle.Normal
                     )
                 ) {
@@ -324,7 +333,7 @@ private fun DrawScope.drawBaseChart(
                 textMeasurer = textMeasure,
                 text = text,
                 topLeft = Offset(
-                    startingOffset + (chartWidth / hoursView) * i - 4,
+                    startingOffset + (chartWidth / hoursView) * i - 5,
                     size.height - 20
                 )
             )
@@ -333,20 +342,19 @@ private fun DrawScope.drawBaseChart(
     drawBottomDailyLegend(weekView, textMeasure)
     for (i in 1..8) {
         drawLine(
-            Color.LightGray,
+            Color.DarkGray,
             Offset(0f, 0f + (chartHeight / 9) * i),
             Offset(chartWidth, +(chartHeight / 9) * i),
             cap = StrokeCap.Round,
-            strokeWidth = 0.1f,
-            pathEffect = pathEffect
+            strokeWidth = 0.5f
         )
     }
     drawLine(
-        Color.DarkGray,
+        Color.LightGray,
         Offset(0f, 0f),
         Offset(chartWidth, 0f),
         cap = StrokeCap.Round,
-        strokeWidth = 1f
+        strokeWidth = 1.5f
     )
 }
 
@@ -362,7 +370,7 @@ private fun DrawScope.drawBottomDailyLegend(
                 style = SpanStyle(
                     color = Color.LightGray,
                     fontSize = 8.sp,
-                    fontWeight = FontWeight.ExtraLight,
+                    fontWeight = FontWeight.Normal,
                     fontStyle = FontStyle.Normal
                 )
             ) {
@@ -374,7 +382,7 @@ private fun DrawScope.drawBottomDailyLegend(
                 style = SpanStyle(
                     color = Color.LightGray,
                     fontSize = 8.sp,
-                    fontWeight = FontWeight.ExtraLight,
+                    fontWeight = FontWeight.Normal,
                     fontStyle = FontStyle.Normal
                 )
             ) {
@@ -386,7 +394,7 @@ private fun DrawScope.drawBottomDailyLegend(
                 style = SpanStyle(
                     color = Color.LightGray,
                     fontSize = 8.sp,
-                    fontWeight = FontWeight.ExtraLight,
+                    fontWeight = FontWeight.Normal,
                     fontStyle = FontStyle.Normal
                 )
             ) {

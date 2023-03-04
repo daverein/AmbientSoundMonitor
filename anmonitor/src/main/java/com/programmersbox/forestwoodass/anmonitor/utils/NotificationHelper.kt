@@ -80,7 +80,7 @@ class NotificationHelper(val context: Context) {
         )
 
         val a = intArrayOf(Color.Green.toArgb(), Color.Yellow.toArgb(), Color.Red.toArgb())
-        val b = floatArrayOf(0.0f, 0.8f, 0.95f)
+        val b = floatArrayOf(COLORS_GREEN_START, COLORS_YELLOW_START, COLORS_RED_START)
         val shader: Shader = LinearGradient(
             0f,
             0f,
