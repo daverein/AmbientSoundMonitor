@@ -443,6 +443,17 @@ private fun DrawScope.drawBaseChart(
             strokeWidth = 0.5f
         )
     }
+    if ( !weekView ) {
+        for(i in 1 until 3) {
+            drawLine(
+                Color.DarkGray,
+                Offset(i*(chartWidth/3)+6, 8f),
+                Offset(i*(chartWidth/3)+6, chartHeight-8),
+                cap = StrokeCap.Round,
+                strokeWidth = 0.5f
+            )
+        }
+    }
     drawLine(
         Color.LightGray,
         Offset(0f, 0f),
