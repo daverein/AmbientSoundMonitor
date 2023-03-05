@@ -1,7 +1,6 @@
 package com.programmersbox.forestwoodass.anmonitor.utils
 
 import android.content.Context
-import com.programmersbox.forestwoodass.anmonitor.presentation.tile.SamplingTile
 import java.util.*
 
 class MonitorDBLevels(val context: Context, private val warningHelper: WarningHelper) {
@@ -58,7 +57,6 @@ class MonitorDBLevels(val context: Context, private val warningHelper: WarningHe
     }
 
     fun reset() {
-        SamplingTile.refreshTile(context)
         interval = DEFAULT_WAIT_TIME
         startLevelsTimestamp = 0
     }
@@ -80,24 +78,20 @@ class MonitorDBLevels(val context: Context, private val warningHelper: WarningHe
 
     private fun determineWarningLevel(): Long {
         var rc = DEFAULT_WAIT_TIME
-        if (lastMaxDB > 0.0) {
-            if (lastMaxDB > minAlertLevel) {
-                if (startLevelsTimestamp == 0L) {
-                    startLevelsTimestamp = Calendar.getInstance().timeInMillis
-                }
-                showNotification = false
-                DbDoseLength.values().forEach {
-                    if (it.dbLevel <= lastMaxDB ) {
-                        rc = it.waitInterval
-                        if ((it.timeLengthInSec * 1000 + startLevelsTimestamp) <= Calendar.getInstance().timeInMillis) {
-                             showNotification = true
-                        }
+        if (lastMaxDB > 0.0 && lastMaxDB > minAlertLevel) {
+            if (startLevelsTimestamp == 0L) {
+                startLevelsTimestamp = Calendar.getInstance().timeInMillis
+            }
+            showNotification = false
+            DbDoseLength.values().forEach {
+                if (it.dbLevel <= lastMaxDB ) {
+                    rc = it.waitInterval
+                    if ((it.timeLengthInSec * 1000 + startLevelsTimestamp) <= Calendar.getInstance().timeInMillis) {
+                         showNotification = true
                     }
                 }
-                determineShowNotification()
             }
-        } else {
-            SamplingTile.refreshTile(context)
+            determineShowNotification()
         }
         return rc
     }

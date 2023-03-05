@@ -118,6 +118,7 @@ class SamplingService : Service() {
                 monitorDB.recordDBLevel(soundRecorder.maxDB.toFloat())
             } else {
                 monitorDB.reset()
+                refreshTile(baseContext)
             }
             Log.d(TAG,"Waiting ${1000*60*monitorDB.getNextSampleDelay()}ms before taking another sample")
 
