@@ -75,12 +75,12 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
 
         Spacer(Modifier.padding(12.dp))
         DrawChartTitle(weekView, dow, samples)
-        if ( samples.size > 0 ) {
-            DrawSampleRange(minValue, maxValue)
-            Spacer(Modifier.padding(1.dp))
-            ChartLevels(weekView, dow, samples)
 
-        }
+        DrawSampleRange(minValue, maxValue, samples)
+        Spacer(Modifier.padding(1.dp))
+
+        ChartLevels(weekView, dow, samples)
+
         Spacer(Modifier.padding(2.dp))
         Text(buildAnnotatedString {
             withStyle(
@@ -155,31 +155,44 @@ private fun ShowNoSamplesDialog(context: Context) {
 }
 
 @Composable
-private fun DrawSampleRange(minValue: Float, maxValue: Float) {
-    Text(buildAnnotatedString {
-        withStyle(style = SpanStyle(fontSize = 21.sp, color = MaterialTheme.colors.primary)) {
-            append(
-                String.format(
-                    "%.1f",
-                    minValue
+private fun DrawSampleRange(
+    minValue: Float,
+    maxValue: Float,
+    samples: ArrayList<DBLevelStore.SampleValue>
+) {
+    if ( samples.size == 0 ) {
+        Text(buildAnnotatedString {
+            withStyle(style = SpanStyle(fontSize = 21.sp, color = MaterialTheme.colors.primary)) {
+                append("No data")
+
+            }
+        })
+    } else {
+        Text(buildAnnotatedString {
+            withStyle(style = SpanStyle(fontSize = 21.sp, color = MaterialTheme.colors.primary)) {
+                append(
+                    String.format(
+                        "%.1f",
+                        minValue
+                    )
                 )
-            )
-        }
-        withStyle(style = SpanStyle(fontSize = 8.sp, color = MaterialTheme.colors.primary)) {
-            append("dB")
-        }
-        withStyle(style = SpanStyle(fontSize = 21.sp, color = MaterialTheme.colors.primary)) {
-            append(
-                String.format(
-                    " - %.1f",
-                    maxValue
+            }
+            withStyle(style = SpanStyle(fontSize = 8.sp, color = MaterialTheme.colors.primary)) {
+                append("dB")
+            }
+            withStyle(style = SpanStyle(fontSize = 21.sp, color = MaterialTheme.colors.primary)) {
+                append(
+                    String.format(
+                        " - %.1f",
+                        maxValue
+                    )
                 )
-            )
-        }
-        withStyle(style = SpanStyle(fontSize = 8.sp, color = MaterialTheme.colors.primary)) {
-            append("dB")
-        }
-    })
+            }
+            withStyle(style = SpanStyle(fontSize = 8.sp, color = MaterialTheme.colors.primary)) {
+                append("dB")
+            }
+        })
+    }
 }
 
 
@@ -201,9 +214,6 @@ fun ChartLevels(weekView: Boolean, dow: Int, samples: ArrayList<DBLevelStore.Sam
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { tapOffset ->
-                        // When the user taps on the Canvas, you can
-                        // check if the tap offset is in one of the
-                        // tracked Rects.
                         if ( weekView ) {
                             val mDow = floor((tapOffset.x /size.width.toFloat())*7).toInt()
                             Log.d(TAG, "Tapped offset = ${tapOffset.x}  days back = $mDow")
@@ -297,21 +307,23 @@ private fun DrawScope.drawWeeklyChart(
         dayMax = max(dayMax, sampleValue)
     }
 
-    val x = (dayCurrent / 7f)   + (dayPart *(1/21f))
-    Log.d(TAG, "X = $x  $dayCurrent  and $dayPart  with $dayMin / $dayMax")
-    drawLine(
-        Color(android.graphics.Color.parseColor(GraphColor)),
-        Offset(
-            (startingOffset + (x) * chartWidth).toFloat(),
-            chartHeight - (dayMin / 90f) * chartHeight
-        ),
-        Offset(
-            (startingOffset + (x) * chartWidth).toFloat(),
-            chartHeight - (dayMax / 90f) * chartHeight
-        ),
-        cap = StrokeCap.Round,
-        strokeWidth = 6f
-    )
+    if ( samples.size > 0 ) {
+        val x = (dayCurrent / 7f) + (dayPart * (1 / 21f))
+        Log.d(TAG, "X = $x  $dayCurrent  and $dayPart  with $dayMin / $dayMax")
+        drawLine(
+            Color(android.graphics.Color.parseColor(GraphColor)),
+            Offset(
+                (startingOffset + (x) * chartWidth).toFloat(),
+                chartHeight - (dayMin / 90f) * chartHeight
+            ),
+            Offset(
+                (startingOffset + (x) * chartWidth).toFloat(),
+                chartHeight - (dayMax / 90f) * chartHeight
+            ),
+            cap = StrokeCap.Round,
+            strokeWidth = 6f
+        )
+    }
 }
 
 private fun getBallColor(it: DBLevelStore.SampleValue): Color {
@@ -378,19 +390,21 @@ private fun DrawScope.drawDailyChart(
         hourMin = min(hourMin, sampleValue)
         hourMax = max(hourMax, sampleValue)
     }
-    drawLine(
-        Color(android.graphics.Color.parseColor(GraphColor)),
-        Offset(
-            startingOffset + (hourCurrent / 24f) * chartWidth,
-            chartHeight - (hourMin / 90f) * chartHeight
-        ),
-        Offset(
-            startingOffset + (hourCurrent / 24f) * chartWidth,
-            chartHeight - (hourMax / 90f) * chartHeight
-        ),
-        cap = StrokeCap.Round,
-        strokeWidth = 6f
-    )
+    if ( samples.size > 0 ) {
+        drawLine(
+            Color(android.graphics.Color.parseColor(GraphColor)),
+            Offset(
+                startingOffset + (hourCurrent / 24f) * chartWidth,
+                chartHeight - (hourMin / 90f) * chartHeight
+            ),
+            Offset(
+                startingOffset + (hourCurrent / 24f) * chartWidth,
+                chartHeight - (hourMax / 90f) * chartHeight
+            ),
+            cap = StrokeCap.Round,
+            strokeWidth = 6f
+        )
+    }
 }
 
 
