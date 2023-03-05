@@ -12,15 +12,6 @@ class SamplingSoundDataRepository(private val context: Context) {
         context.getSharedPreferences(PREFERENCES_FILENAME, Service.MODE_PRIVATE)
     }
 
-    fun putSampleDBValue(sampleDB: Float) {
-
-        sharedPreferences.edit()
-            .putFloat(LATEST_SAMPLE, sampleDB)
-            .putLong(LATEST_SAMPLE_TIME, Calendar.getInstance().timeInMillis)
-            .apply()
-        refreshTiles()
-    }
-
     fun refreshTiles() {
         refreshTile(context)
     }
@@ -37,17 +28,6 @@ class SamplingSoundDataRepository(private val context: Context) {
             SAMPLE_SECONDARY_COLOR, android.graphics.Color.parseColor(
                 "#226949"
             )
-        )
-    }
-
-    fun getSampleDBValue(): Float {
-        return sharedPreferences.getFloat(LATEST_SAMPLE, 0f)
-    }
-
-
-    fun getSampleDBTimestamp(): Long {
-        return sharedPreferences.getLong(
-            LATEST_SAMPLE_TIME, 0L
         )
     }
 

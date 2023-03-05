@@ -135,7 +135,7 @@ private fun ShowNoSamplesDialog(context: Context) {
         title = { Text(text = "Ambient Monitor", textAlign = TextAlign.Center) },
         message = {
             Text(
-                text = "No data expires for that period",
+                text = "No data exists for that period",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.body2
             )

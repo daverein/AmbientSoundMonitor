@@ -1,10 +1,10 @@
 package com.programmersbox.forestwoodass.anmonitor.utils
 
 import android.content.Context
-import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
+import com.programmersbox.forestwoodass.anmonitor.presentation.tile.SamplingTile
 import java.util.*
 
-class MonitorDBLevels(context: Context, private val warningHelper: WarningHelper) {
+class MonitorDBLevels(val context: Context, private val warningHelper: WarningHelper) {
 
     enum class DbDoseLength(
         val dbLevel: Float = 0.0f,
@@ -45,7 +45,6 @@ class MonitorDBLevels(context: Context, private val warningHelper: WarningHelper
         )
     }
 
-    private val repo = SamplingSoundDataRepository(context)
     private var lastMaxDB: Float = 0.0f
     private var lastTimestamp: Long = 0L
     private var startLevelsTimestamp: Long = 0L
@@ -59,7 +58,7 @@ class MonitorDBLevels(context: Context, private val warningHelper: WarningHelper
     }
 
     fun reset() {
-        repo.refreshTiles()
+        SamplingTile.refreshTile(context)
         interval = DEFAULT_WAIT_TIME
         startLevelsTimestamp = 0
     }
@@ -82,7 +81,6 @@ class MonitorDBLevels(context: Context, private val warningHelper: WarningHelper
     private fun determineWarningLevel(): Long {
         var rc = DEFAULT_WAIT_TIME
         if (lastMaxDB > 0.0) {
-
             if (lastMaxDB > minAlertLevel) {
                 if (startLevelsTimestamp == 0L) {
                     startLevelsTimestamp = Calendar.getInstance().timeInMillis
@@ -99,7 +97,7 @@ class MonitorDBLevels(context: Context, private val warningHelper: WarningHelper
                 determineShowNotification()
             }
         } else {
-            repo.refreshTiles()
+            SamplingTile.refreshTile(context)
         }
         return rc
     }

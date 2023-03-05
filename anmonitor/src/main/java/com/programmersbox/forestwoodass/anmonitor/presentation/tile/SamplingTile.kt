@@ -14,6 +14,7 @@ import androidx.wear.tiles.material.layouts.PrimaryLayout
 import com.google.android.horologist.compose.tools.buildDeviceParameters
 import com.google.android.horologist.tiles.ExperimentalHorologistTilesApi
 import com.google.android.horologist.tiles.SuspendingTileService
+import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
 import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
 import com.programmersbox.forestwoodass.anmonitor.services.SamplingService
 import com.programmersbox.forestwoodass.anmonitor.utils.MonitorDBLevels
@@ -29,7 +30,9 @@ private const val REFRESH_CMD = "Refresh"
 
 @OptIn(ExperimentalHorologistTilesApi::class)
 class SamplingTile : SuspendingTileService() {
-    private lateinit var repo: SamplingSoundDataRepository
+    private val repo: SamplingSoundDataRepository by lazy { SamplingSoundDataRepository(this) }
+
+    private val dbHelper: DBLevelStore by lazy { DBLevelStore(this) }
 
     private val simpleDateFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
 
@@ -53,12 +56,13 @@ class SamplingTile : SuspendingTileService() {
         .build()
 
     val calendar = Calendar.getInstance()
-    calendar.timeInMillis = repo.getSampleDBTimestamp()
-    val dbString = String.format("%.1f", repo.getSampleDBValue())
+        val sampleValue = dbHelper.getMostRecentSample()
+    calendar.timeInMillis = sampleValue.timestamp
+    val dbString = String.format("%.1f", sampleValue.sampleValue)
     val textColor =
-        if ( repo.getSampleDBValue() >= MonitorDBLevels.DbDoseLength.values().max().dbLevel ) {
+        if ( sampleValue.sampleValue >= MonitorDBLevels.DbDoseLength.values().max().dbLevel ) {
             Color.Red.toArgb()
-        } else if ( repo.getSampleDBValue() >= MonitorDBLevels.DbDoseLength.values().min().dbLevel ) {
+        } else if ( sampleValue.sampleValue >= MonitorDBLevels.DbDoseLength.values().min().dbLevel ) {
                 Color.Yellow.toArgb()
         } else {
             Color.White.toArgb()
@@ -120,11 +124,6 @@ class SamplingTile : SuspendingTileService() {
             }
         }
         return layout.build()
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-        repo = SamplingSoundDataRepository(this)
     }
 
     override suspend fun resourcesRequest(requestParams: RequestBuilders.ResourcesRequest): ResourceBuilders.Resources {

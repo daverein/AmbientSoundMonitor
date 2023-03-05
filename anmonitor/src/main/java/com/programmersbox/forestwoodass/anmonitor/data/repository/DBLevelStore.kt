@@ -62,6 +62,24 @@ class DBLevelStore  // creating a constructor for our database handler.
         db.close()
     }
 
+    fun getMostRecentSample(): SampleValue {
+        val db = this.readableDatabase
+        val cursorSamples: Cursor = db.rawQuery("SELECT * FROM $TABLE_NAME ORDER BY ID DESC LIMIT 1", null)
+
+        if (cursorSamples.moveToFirst()) {
+            do {
+                val rc =
+                    SampleValue(
+                        cursorSamples.getFloat(1),
+                        cursorSamples.getLong(2),
+                    )
+                cursorSamples.close()
+                return rc
+            } while (cursorSamples.moveToNext())
+        }
+        return SampleValue(0f, 0L)
+    }
+
     fun getAllSamples(weekly: Boolean, dow: Int): ArrayList<SampleValue> {
         val db = this.readableDatabase
         val beforeTime = when ( weekly ) {
