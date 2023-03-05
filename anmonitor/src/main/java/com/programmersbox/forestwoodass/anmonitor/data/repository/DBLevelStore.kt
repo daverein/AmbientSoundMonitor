@@ -5,6 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.text.format.DateFormat
 import android.util.Log
 import java.util.Calendar
 
@@ -74,9 +75,13 @@ class DBLevelStore  // creating a constructor for our database handler.
                         cursorSamples.getLong(2),
                     )
                 cursorSamples.close()
+
+                db.close()
                 return rc
             } while (cursorSamples.moveToNext())
         }
+        cursorSamples.close()
+        db.close()
         return SampleValue(0f, 0L)
     }
 
@@ -85,7 +90,9 @@ class DBLevelStore  // creating a constructor for our database handler.
         val beforeTime = when ( weekly ) {
             false -> if ( dow == -1 ) {
                     Calendar.getInstance().timeInMillis - ((Calendar.getInstance().get(Calendar.HOUR_OF_DAY)*(1000*60*60))
-                        +(Calendar.getInstance().get(Calendar.MINUTE)*(1000*60)))
+                        +(Calendar.getInstance().get(Calendar.MINUTE)*(1000*60))
+                            +(Calendar.getInstance().get(Calendar.SECOND)*(1000))
+                            )
                     }else{
                         if ( dow > Calendar.getInstance().get(Calendar.DAY_OF_WEEK) ) {
                             Calendar.getInstance().timeInMillis
@@ -93,24 +100,34 @@ class DBLevelStore  // creating a constructor for our database handler.
                             // Adjust this to include the current hour.
                             val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
                             val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
-                            Calendar.getInstance().timeInMillis - ((Calendar.getInstance()
+                            val v1 = Calendar.getInstance().timeInMillis - ((Calendar.getInstance()
                                 .get(Calendar.DAY_OF_WEEK) - dow ) * (1000 * 60 * 60 * 24) - (1000 * 60 * 60 * (24-currentHour)))
+                            (v1 - ((Calendar.getInstance().get(Calendar.MINUTE)*(1000*60))+(Calendar.getInstance().get(Calendar.SECOND)*(1000))))
                         }
                     }
             true -> {
-                Calendar.getInstance().timeInMillis - (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)+1) * (1000*60*60*24)
+                Calendar.getInstance().timeInMillis - ((Calendar.getInstance().get(Calendar.DAY_OF_WEEK)-1) * (1000*60*60*24)+
+                        ((Calendar.getInstance().get(Calendar.HOUR_OF_DAY)*(1000*60*60))
+                                +(Calendar.getInstance().get(Calendar.MINUTE)*(1000*60))
+                                +(Calendar.getInstance().get(Calendar.SECOND)*(1000))))
             }
         }
-        val afterTime = beforeTime + (1000*60*60*24)
-        Log.d("DBLevelStore", "before $beforeTime and $afterTime and ${Calendar.getInstance().timeInMillis} ")
-        val cursorSamples: Cursor = when ( dow ) {
-            -1 -> db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime", null)
-            else -> db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime AND $DURATION_COL < $afterTime", null)
+        val afterTime = beforeTime + when (weekly ) {
+            false -> (1000 * 60 * 60 * 24)
+            true -> (1000 * 60 * 60 * 24 * 7)
+        }
+        Log.d("DBLevelStore", "dow: $dow / DOW: ${Calendar.getInstance().get(Calendar.DAY_OF_WEEK)}  before $beforeTime (${DateFormat.format("MMM dd hh:mm:ss", beforeTime)}) and $afterTime (${DateFormat.format("MMM dd hh:mm:ss", afterTime)}) and ${Calendar.getInstance().timeInMillis}  (${DateFormat.format("MMM dd hh:mm:ss", Calendar.getInstance().timeInMillis)})")
+
+        val cursorSamples: Cursor = if ( dow == -1 && !weekly) {
+            db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime", null)
+        } else {
+            db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime AND $DURATION_COL < $afterTime", null)
         }
         val samplesModelArrayList: ArrayList<SampleValue> = ArrayList()
 
         if (cursorSamples.moveToFirst()) {
             do {
+                Log.d("DBLevelStore", "Sample timestamp: ${DateFormat.format("MMM dd hh:mm:ss", cursorSamples.getLong(2))}")
                 samplesModelArrayList.add(
                     SampleValue(
                         cursorSamples.getFloat(1),
@@ -122,6 +139,7 @@ class DBLevelStore  // creating a constructor for our database handler.
         }
 
         cursorSamples.close()
+        db.close()
         return samplesModelArrayList
     }
 

@@ -50,7 +50,6 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
     val context = LocalContext.current
     val dbHelper = DBLevelStore(LocalContext.current)
     val samples = dbHelper.getAllSamples(weekView, dow)
-    Log.d(TAG, "Got ${samples.size} items")
 
     var minValue = 120f
     var maxValue = 0f
@@ -243,7 +242,6 @@ fun ChartLevels(weekView: Boolean, dow: Int, samples: ArrayList<DBLevelStore.Sam
             drawTodayLine(weekView, startingOffset, chartWidth, chartHeight)
         }
 
-        Log.d(DBMonitor.TAG, "Got ${samples.size} items")
         if ( !weekView ) {
             drawDailyChart(samples, startingOffset, chartWidth, chartHeight)
         } else {
