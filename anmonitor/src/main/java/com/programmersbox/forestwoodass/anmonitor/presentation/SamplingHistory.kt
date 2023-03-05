@@ -52,10 +52,6 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
     val samples = dbHelper.getAllSamples(weekView, dow)
     Log.d(TAG, "Got ${samples.size} items")
 
-    if ( dow != -1 && samples.size == 0 ) {
-        ShowNoSamplesDialog(context)
-        return
-    }
     var minValue = 120f
     var maxValue = 0f
     samples.forEach {
@@ -65,7 +61,7 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
     if ( samples.size > 0 ) {
         FormatTimeText(weekView, samples[0].timestamp, dowIn = dow)
     } else {
-        FormatTimeText(weekView, dowIn = dow)
+        FormatTimeText(weekView, Calendar.getInstance().timeInMillis, dowIn = dow)
     }
     Column(
         modifier = Modifier
@@ -109,9 +105,17 @@ private fun DrawChartTitle(
                 if (dow == -1) {
                     append("Today")
                 } else {
-                    val cal = Calendar.getInstance()
-                    cal.timeInMillis = samples[0].timestamp
-                    append("${DateFormat.format("EEE MMM dd", cal)}")
+                    if ( samples.size > 0 ) {
+                        val cal = Calendar.getInstance()
+                        cal.timeInMillis = samples[0].timestamp
+                        append("${DateFormat.format("EEE MMM dd", cal)}")
+                    } else {
+                        val now = Calendar.getInstance()
+                        val nowDow = now.get(Calendar.DAY_OF_WEEK)
+
+                        now.timeInMillis = now.timeInMillis-(nowDow-dow-1)*(1000*60*60*24L)
+                        append("${DateFormat.format("EEE MMM dd", now)}")
+                    }
                 }
             }
         }
