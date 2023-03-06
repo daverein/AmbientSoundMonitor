@@ -13,9 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import com.google.accompanist.pager.ExperimentalPagerApi
-import com.google.accompanist.pager.VerticalPager
-import com.google.accompanist.pager.rememberPagerState
+import com.google.accompanist.pager.*
 import com.programmersbox.forestwoodass.anmonitor.presentation.theme.WearAppTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,7 +44,7 @@ class SampleDayDialog : ComponentActivity() {
                         .weight(1f)
                         .fillMaxWidth(),
                 ) {
-                    VerticalPager(
+                    HorizontalPager(
                         count = 7,
                         state = pagerState,
                     ) {
