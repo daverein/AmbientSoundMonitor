@@ -41,7 +41,7 @@ private const val GraphColor = "#88888888"
 
 @OptIn(ExperimentalPagerApi::class)
 @Composable
-fun SamplingHistory(weekView: Boolean, dow: Int = -1, timestamp:Long = 0L) {
+fun SamplingHistory(weekView: Boolean, timestamp:Long = 0L) {
     val viewCalendar = Calendar.getInstance()
     if ( timestamp != 0L ) {
         viewCalendar.timeInMillis = timestamp
@@ -59,26 +59,25 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1, timestamp:Long = 0L) {
             state = pagerState,
         ) { page ->
             when (page) {
-                0 -> DrawBody(true, dow, viewCalendar)
-                1 -> DrawBody(true, dow, viewCalendar2)
-                2 -> DrawBody(true, dow, viewCalendar3)
-                3 -> DrawBody(true, dow, viewCalendar4)
+                0 -> DrawBody(true, viewCalendar)
+                1 -> DrawBody(true, viewCalendar2)
+                2 -> DrawBody(true, viewCalendar3)
+                3 -> DrawBody(true, viewCalendar4)
             }
         }
     } else {
-        DrawBody(false, dow, viewCalendar)
+        DrawBody(false, viewCalendar)
     }
 }
 
 @Composable
 private fun DrawBody(
     weekView: Boolean,
-    dow: Int,
     viewCalendar: Calendar
 ) {
     val dbHelper = DBLevelStore(LocalContext.current)
 
-    val samples = dbHelper.getAllSamples(weekView, dow, viewCalendar.timeInMillis)
+    val samples = dbHelper.getAllSamples(weekView, viewCalendar.timeInMillis)
     var minValue = 120f
     var maxValue = 0f
     samples.forEach {

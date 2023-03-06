@@ -55,28 +55,18 @@ class DBLevelStore  // creating a constructor for our database handler.
         return SampleValue(0f, 0L)
     }
 
-    fun getAllSamples(weekly: Boolean, dow: Int, timestamp: Long): ArrayList<SampleValue> {
+    fun getAllSamples(weekly: Boolean, timestamp: Long): ArrayList<SampleValue> {
         val cal = Calendar.getInstance()
         if ( timestamp != 0L ) {
             cal.timeInMillis = timestamp
         }
         val beforeTime = when ( weekly ) {
-            false -> if ( dow == -1 ) {
+            false ->
                     cal.timeInMillis - ((Calendar.getInstance().get(Calendar.HOUR_OF_DAY)*(1000*60*60))
                         +(cal.get(Calendar.MINUTE)*(1000*60))
                             +(cal.get(Calendar.SECOND)*(1000))
                             )
-                    }else{
-                        if ( dow > cal.get(Calendar.DAY_OF_WEEK) ) {
-                            cal.timeInMillis
-                        } else {
-                            // Adjust this to include the current hour.
-                            val currentHour = cal.get(Calendar.HOUR_OF_DAY)
-                            val v1 = cal.timeInMillis - ((Calendar.getInstance()
-                                .get(Calendar.DAY_OF_WEEK) - dow ) * (1000 * 60 * 60 * 24) - (1000 * 60 * 60 * (24-currentHour)))
-                            (v1 - ((cal.get(Calendar.MINUTE)*(1000*60))+(cal.get(Calendar.SECOND)*(1000))))
-                        }
-                    }
+
             true -> {
                 cal.timeInMillis - ((cal.get(Calendar.DAY_OF_WEEK)-1) * (1000*60*60*24)+
                         ((cal.get(Calendar.HOUR_OF_DAY)*(1000*60*60))

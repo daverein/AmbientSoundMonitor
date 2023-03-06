@@ -52,13 +52,13 @@ class SampleDayDialog : ComponentActivity() {
                     ) {
                             page ->
                         when ( page ) {
-                            0 -> SamplingHistory(false, -1, timestamp)
-                            1 -> SamplingHistory(false, -1, timestamp+oneDay)
-                            2 -> SamplingHistory(false, -1, timestamp+oneDay*2)
-                            3 -> SamplingHistory(false, -1, timestamp+oneDay*3)
-                            4 -> SamplingHistory(false, -1, timestamp+oneDay*4)
-                            5 -> SamplingHistory(false, -1, timestamp+oneDay*5)
-                            6 -> SamplingHistory(false, -1, timestamp+oneDay*6)
+                            0 -> SamplingHistory(false, timestamp)
+                            1 -> SamplingHistory(false, timestamp+oneDay)
+                            2 -> SamplingHistory(false, timestamp+oneDay*2)
+                            3 -> SamplingHistory(false, timestamp+oneDay*3)
+                            4 -> SamplingHistory(false, timestamp+oneDay*4)
+                            5 -> SamplingHistory(false, timestamp+oneDay*5)
+                            6 -> SamplingHistory(false, timestamp+oneDay*6)
                         }
                     }
                 }
