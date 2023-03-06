@@ -1,7 +1,5 @@
 package com.programmersbox.forestwoodass.anmonitor.presentation
 
-import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.graphics.*
 import android.text.format.DateFormat
@@ -20,24 +18,19 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.*
-import androidx.wear.compose.material.dialog.Alert
 import com.google.accompanist.pager.*
-import com.programmersbox.forestwoodass.anmonitor.R
 import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
 import com.programmersbox.forestwoodass.anmonitor.utils.COLORS_RED_START
 import com.programmersbox.forestwoodass.anmonitor.utils.COLORS_YELLOW_START
 import com.programmersbox.forestwoodass.anmonitor.utils.FormatTimeText
 import kotlinx.coroutines.*
 import java.util.*
-import kotlin.collections.ArrayList
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -47,7 +40,6 @@ private const val GraphColor = "#88888888"
 
 @Composable
 fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
-    val context = LocalContext.current
     val dbHelper = DBLevelStore(LocalContext.current)
     val samples = dbHelper.getAllSamples(weekView, dow)
 
@@ -122,42 +114,6 @@ private fun DrawChartTitle(
 }
 
 @Composable
-private fun ShowNoSamplesDialog(context: Context) {
-    Alert(
-        verticalArrangement = Arrangement.spacedBy(4.dp, Alignment.Top),
-        contentPadding = PaddingValues(start = 10.dp, end = 10.dp, top = 4.dp, bottom = 52.dp),
-        icon = {
-            Icon(
-                painter = painterResource(id = R.drawable.hearing_damage),
-                contentDescription = "Hearing Damage",
-                modifier = Modifier
-                    .size(16.dp)
-                    .wrapContentSize(align = Alignment.Center),
-            )
-        },
-        title = { Text(text = "Ambient Monitor", textAlign = TextAlign.Center) },
-        message = {
-            Text(
-                text = "No data exists for that period",
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.body2
-            )
-        },
-    ) {
-        item {
-            Chip(
-                label = { Text("Close") },
-                onClick = {
-                    val activity = (context as? Activity)
-                    activity?.finish()
-                },
-                colors = ChipDefaults.primaryChipColors(),
-            )
-        }
-    }
-}
-
-@Composable
 private fun DrawSampleRange(
     minValue: Float,
     maxValue: Float,
@@ -219,8 +175,16 @@ fun ChartLevels(weekView: Boolean, dow: Int, samples: ArrayList<DBLevelStore.Sam
                     onTap = { tapOffset ->
                         if ( weekView ) {
                             val mDow = floor((tapOffset.x /size.width.toFloat())*7).toInt()
+                            val startWeekTime = Calendar.getInstance().timeInMillis -
+                                    ((Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1) *
+                                            (1000 * 60 * 60 * 24))
+                            val timestamp = startWeekTime + mDow * (1000*60*60*24)
                             Log.d(TAG, "Tapped offset = ${tapOffset.x}  days back = $mDow")
-                            context.startActivity(Intent(context, SampleDayDialog::class.java).putExtra("DOW", mDow))
+                            context.startActivity(
+                                Intent(context, SampleDayDialog::class.java)
+                                    .putExtra("DOW", mDow)
+                                    .putExtra("TIMESTAMP", timestamp)
+                            )
                         }
                     }
                 )
@@ -272,7 +236,6 @@ private fun DrawScope.drawWeeklyChart(
         if (dow != dayCurrent || dayPart != dp) {
             if (dayCurrent != -1 && dayPart != -1.0) {
                 val x: Float = ((dayCurrent / 7f)   + dayPart *(1/21f)).toFloat()
-                Log.d(TAG, "X = $x  $dayCurrent  and $dayPart with $dayMin / $dayMax")
                 drawLine(
                     Color(android.graphics.Color.parseColor(GraphColor)),
                     Offset(
@@ -311,7 +274,6 @@ private fun DrawScope.drawWeeklyChart(
 
     if ( samples.size > 0 ) {
         val x = (dayCurrent / 7f) + (dayPart * (1 / 21f))
-        Log.d(TAG, "X = $x  $dayCurrent  and $dayPart  with $dayMin / $dayMax")
         drawLine(
             Color(android.graphics.Color.parseColor(GraphColor)),
             Offset(

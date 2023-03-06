@@ -1,6 +1,8 @@
 package com.programmersbox.forestwoodass.anmonitor.presentation
 
 import android.os.Bundle
+import android.text.format.DateFormat
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
@@ -22,9 +24,11 @@ import kotlinx.coroutines.launch
 class SampleDayDialog : ComponentActivity() {
     private var serviceScope = CoroutineScope(Dispatchers.Main )
     private val dow: Int by lazy { intent?.getIntExtra("DOW", -1)!! }
+    private val timestamp: Long by lazy { intent?.getLongExtra("TIMESTAMP", 0L)!! }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("SampleDayDialog", "Start DOW: $dow for timestamp is: ${DateFormat.format("MMM dd hh:mm:ss", timestamp)}")
         setContent {
             WearApp()
         }
@@ -61,9 +65,10 @@ class SampleDayDialog : ComponentActivity() {
             }
         }
         LaunchedEffect(key1 = 0, block = {
-            serviceScope.launch {
-            pagerState.scrollToPage(dow, 0f)
-        }})
+                serviceScope.launch {
+                pagerState.scrollToPage(dow, 0f)
+            }
+        })
 
     }
 }

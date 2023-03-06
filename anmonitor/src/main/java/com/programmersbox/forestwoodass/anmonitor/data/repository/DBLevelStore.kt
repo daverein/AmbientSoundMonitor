@@ -5,8 +5,6 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.text.format.DateFormat
-import android.util.Log
 import java.util.Calendar
 
 class DBLevelStore  // creating a constructor for our database handler.
@@ -18,67 +16,39 @@ class DBLevelStore  // creating a constructor for our database handler.
     )
     // below method is for creating a database by running a sqlite query
     override fun onCreate(db: SQLiteDatabase) {
-        // on below line we are creating
-        // an sqlite query and we are
-        // setting our column names
-        // along with their data types.
         val query = ("CREATE TABLE " + TABLE_NAME + " ("
                 + ID_COL + " INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + NAME_COL + " FLOAT,"
                 + DURATION_COL + " LONG )"
                 )
 
-        // at last we are calling a exec sql
-        // method to execute above sql query
         db.execSQL(query)
     }
 
-    // this method is use to add new course to our sqlite database.
     fun addNewSample(
         courseName: Float?
     ) {
-
-        // on below line we are creating a variable for
-        // our sqlite database and calling writable method
-        // as we are writing data in our database.
         val db = this.writableDatabase
-
-        // on below line we are creating a
-        // variable for content values.
         val values = ContentValues()
-
-        // on below line we are passing all values
-        // along with its key and value pair.
         values.put(NAME_COL, courseName)
-
-
         values.put(DURATION_COL, Calendar.getInstance().timeInMillis)
-
-        // after adding all values we are passing
-        // content values to our table.
         db.insert(TABLE_NAME, null, values)
-
-        // at last we are closing our
-        // database after adding database.
         db.close()
     }
 
     fun getMostRecentSample(): SampleValue {
         val db = this.readableDatabase
-        val cursorSamples: Cursor = db.rawQuery("SELECT * FROM $TABLE_NAME ORDER BY ID DESC LIMIT 1", null)
+        val cursorSamples: Cursor = db.rawQuery("SELECT $NAME_COL,$DURATION_COL FROM $TABLE_NAME ORDER BY ID DESC LIMIT 1", null)
 
         if (cursorSamples.moveToFirst()) {
-            do {
-                val rc =
-                    SampleValue(
-                        cursorSamples.getFloat(1),
-                        cursorSamples.getLong(2),
-                    )
-                cursorSamples.close()
-
-                db.close()
-                return rc
-            } while (cursorSamples.moveToNext())
+            val rc =
+                SampleValue(
+                    cursorSamples.getFloat(0),
+                    cursorSamples.getLong(1),
+                )
+            cursorSamples.close()
+            db.close()
+            return rc
         }
         cursorSamples.close()
         db.close()
@@ -86,58 +56,57 @@ class DBLevelStore  // creating a constructor for our database handler.
     }
 
     fun getAllSamples(weekly: Boolean, dow: Int): ArrayList<SampleValue> {
-        val db = this.readableDatabase
+        val cal = Calendar.getInstance()
         val beforeTime = when ( weekly ) {
             false -> if ( dow == -1 ) {
-                    Calendar.getInstance().timeInMillis - ((Calendar.getInstance().get(Calendar.HOUR_OF_DAY)*(1000*60*60))
-                        +(Calendar.getInstance().get(Calendar.MINUTE)*(1000*60))
-                            +(Calendar.getInstance().get(Calendar.SECOND)*(1000))
+                    cal.timeInMillis - ((Calendar.getInstance().get(Calendar.HOUR_OF_DAY)*(1000*60*60))
+                        +(cal.get(Calendar.MINUTE)*(1000*60))
+                            +(cal.get(Calendar.SECOND)*(1000))
                             )
                     }else{
-                        if ( dow > Calendar.getInstance().get(Calendar.DAY_OF_WEEK) ) {
-                            Calendar.getInstance().timeInMillis
+                        if ( dow > cal.get(Calendar.DAY_OF_WEEK) ) {
+                            cal.timeInMillis
                         } else {
                             // Adjust this to include the current hour.
-                            val currentHour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
-                            val currentMinute = Calendar.getInstance().get(Calendar.MINUTE)
-                            val v1 = Calendar.getInstance().timeInMillis - ((Calendar.getInstance()
+                            val currentHour = cal.get(Calendar.HOUR_OF_DAY)
+                            val v1 = cal.timeInMillis - ((Calendar.getInstance()
                                 .get(Calendar.DAY_OF_WEEK) - dow ) * (1000 * 60 * 60 * 24) - (1000 * 60 * 60 * (24-currentHour)))
-                            (v1 - ((Calendar.getInstance().get(Calendar.MINUTE)*(1000*60))+(Calendar.getInstance().get(Calendar.SECOND)*(1000))))
+                            (v1 - ((cal.get(Calendar.MINUTE)*(1000*60))+(cal.get(Calendar.SECOND)*(1000))))
                         }
                     }
             true -> {
-                Calendar.getInstance().timeInMillis - ((Calendar.getInstance().get(Calendar.DAY_OF_WEEK)-1) * (1000*60*60*24)+
-                        ((Calendar.getInstance().get(Calendar.HOUR_OF_DAY)*(1000*60*60))
-                                +(Calendar.getInstance().get(Calendar.MINUTE)*(1000*60))
-                                +(Calendar.getInstance().get(Calendar.SECOND)*(1000))))
+                cal.timeInMillis - ((cal.get(Calendar.DAY_OF_WEEK)-1) * (1000*60*60*24)+
+                        ((cal.get(Calendar.HOUR_OF_DAY)*(1000*60*60))
+                                +(cal.get(Calendar.MINUTE)*(1000*60))
+                                +(cal.get(Calendar.SECOND)*(1000))))
             }
         }
         val afterTime = beforeTime + when (weekly ) {
             false -> (1000 * 60 * 60 * 24)
             true -> (1000 * 60 * 60 * 24 * 7)
         }
-        Log.d("DBLevelStore", "dow: $dow / DOW: ${Calendar.getInstance().get(Calendar.DAY_OF_WEEK)}  before $beforeTime (${DateFormat.format("MMM dd hh:mm:ss", beforeTime)}) and $afterTime (${DateFormat.format("MMM dd hh:mm:ss", afterTime)}) and ${Calendar.getInstance().timeInMillis}  (${DateFormat.format("MMM dd hh:mm:ss", Calendar.getInstance().timeInMillis)})")
+        //Log.d("DBLevelStore", "dow: $dow / DOW: ${cal.get(Calendar.DAY_OF_WEEK)}  before $beforeTime (${DateFormat.format("MMM dd hh:mm:ss", beforeTime)}) and $afterTime (${DateFormat.format("MMM dd hh:mm:ss", afterTime)}) and ${cal.timeInMillis}  (${DateFormat.format("MMM dd hh:mm:ss", cal.timeInMillis)})")
 
-        val cursorSamples: Cursor = if ( dow == -1 && !weekly) {
-            db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime", null)
-        } else {
-            db.rawQuery("SELECT * FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime AND $DURATION_COL < $afterTime", null)
-        }
+        return getResults(beforeTime, afterTime)
+    }
+
+    private fun getResults(beforeTime: Long, afterTime: Long ): ArrayList<SampleValue> {
+        val db = this.readableDatabase
+        val cursorSamples: Cursor =
+            db.rawQuery("SELECT $NAME_COL,$DURATION_COL FROM $TABLE_NAME WHERE $DURATION_COL > $beforeTime AND $DURATION_COL < $afterTime", null)
         val samplesModelArrayList: ArrayList<SampleValue> = ArrayList()
 
         if (cursorSamples.moveToFirst()) {
             do {
-                Log.d("DBLevelStore", "Sample timestamp: ${DateFormat.format("MMM dd hh:mm:ss", cursorSamples.getLong(2))}")
                 samplesModelArrayList.add(
                     SampleValue(
-                        cursorSamples.getFloat(1),
-                        cursorSamples.getLong(2),
+                        cursorSamples.getFloat(0),
+                        cursorSamples.getLong(1),
                     )
                 )
             } while (cursorSamples.moveToNext())
             // moving our cursor to next.
         }
-
         cursorSamples.close()
         db.close()
         return samplesModelArrayList
@@ -150,24 +119,11 @@ class DBLevelStore  // creating a constructor for our database handler.
     }
 
     companion object {
-        // creating a constant variables for our database.
-        // below variable is for our database name.
         private const val DB_NAME = "db_levels"
-
-        // below int is our database version
         private const val DB_VERSION = 1
-
-        // below variable is for our table name.
         private const val TABLE_NAME = "raw_samples"
-
-        // below variable is for our id column.
         private const val ID_COL = "id"
-
-        // below variable is for our course name column
         private const val NAME_COL = "level"
-
-        // below variable id for our course duration column.
         private const val DURATION_COL = "recorded_at"
-
     }
 }
