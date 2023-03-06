@@ -121,7 +121,15 @@ private fun DrawChartTitle(
     Text(buildAnnotatedString {
         withStyle(style = SpanStyle(fontSize = 12.sp, color = Color.LightGray)) {
             if (weekView) {
-                append("This Week")
+                if ( calIn.get(Calendar.DAY_OF_YEAR) + 7 > Calendar.getInstance().get(Calendar.DAY_OF_YEAR)) {
+                    append("This Week")
+                } else if ( calIn.get(Calendar.DAY_OF_YEAR) + 14 > Calendar.getInstance().get(Calendar.DAY_OF_YEAR) ) {
+                    append("Last Week")
+                } else if ( calIn.get(Calendar.DAY_OF_YEAR) + 21 > Calendar.getInstance().get(Calendar.DAY_OF_YEAR) ) {
+                    append("2 weeks ago")
+                } else {
+                    append("3 weeks ago")
+                }
             } else {
                 if (calIn.get(Calendar.MONTH) == Calendar.getInstance().get(Calendar.MONTH) &&
                     calIn.get(Calendar.DAY_OF_MONTH) == Calendar.getInstance().get(Calendar.DAY_OF_MONTH)) {
