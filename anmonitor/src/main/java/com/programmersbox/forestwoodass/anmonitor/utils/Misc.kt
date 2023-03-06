@@ -27,7 +27,7 @@ fun isMyServiceRunning(context: Context, serviceClass: Class<*>): Boolean {
 }
 
 @Composable
-fun FormatTimeText(weekView: Boolean, timestamp: Long = 0L, dowIn: Int = -1) {
+fun FormatTimeText(weekView: Boolean, timestamp: Long = 0L) {
     val leadingTextStyle =
         TimeTextDefaults.timeTextStyle(color = MaterialTheme.colors.primary, fontSize = 11.sp)
     val leadingTextStyle2 =
@@ -35,9 +35,11 @@ fun FormatTimeText(weekView: Boolean, timestamp: Long = 0L, dowIn: Int = -1) {
     val timeTextFirstPart: String
     val timeTextSecondPart: String
     if (weekView) {
-        val dow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-        val startTime = Calendar.getInstance().timeInMillis - ((dow - 1) * (1000 * 60 * 60 * 24))
-        val endTime = Calendar.getInstance().timeInMillis + ((7 - dow) * (1000 * 60 * 60 * 24))
+        val cal = Calendar.getInstance()
+        cal.timeInMillis = timestamp
+        val dow = cal.get(Calendar.DAY_OF_WEEK)
+        val startTime = cal.timeInMillis - ((dow - 1) * (1000 * 60 * 60 * 24))
+        val endTime = cal.timeInMillis + ((7 - dow) * (1000 * 60 * 60 * 24))
         timeTextFirstPart = "${DateFormat.format("MMM dd", startTime)} - "
         timeTextSecondPart = " ${DateFormat.format("MMM dd", endTime)}"
     } else {
@@ -45,7 +47,10 @@ fun FormatTimeText(weekView: Boolean, timestamp: Long = 0L, dowIn: Int = -1) {
         if ( timestamp == 0L) {
             cal = Calendar.getInstance()
         } else {
-            if ( dowIn != -1) {
+            cal = Calendar.getInstance()
+            cal.timeInMillis = timestamp
+            if ( Calendar.getInstance().get(Calendar.MONTH) != cal.get(Calendar.MONTH) ||
+                    Calendar.getInstance().get(Calendar.DAY_OF_MONTH) != cal.get(Calendar.DAY_OF_MONTH)) {
                 // Don't show the date here
                 TimeText(
                     timeSource = TimeTextDefaults.timeSource(
@@ -54,8 +59,6 @@ fun FormatTimeText(weekView: Boolean, timestamp: Long = 0L, dowIn: Int = -1) {
                 )
                 return
             }
-            cal = Calendar.getInstance()
-            cal.timeInMillis = timestamp
         }
         val month: String = DateFormat.format("MMM", cal.timeInMillis).toString()
         val day: String = DateFormat.format(" dd", cal.timeInMillis).toString()

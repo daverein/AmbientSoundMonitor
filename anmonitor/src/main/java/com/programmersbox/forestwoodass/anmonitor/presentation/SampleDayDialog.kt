@@ -22,7 +22,9 @@ import kotlinx.coroutines.launch
 class SampleDayDialog : ComponentActivity() {
     private var serviceScope = CoroutineScope(Dispatchers.Main )
     private val dow: Int by lazy { intent?.getIntExtra("DOW", -1)!! }
+    // Timestamp is the beginning of the week, on Sunday at 12:00am.
     private val timestamp: Long by lazy { intent?.getLongExtra("TIMESTAMP", 0L)!! }
+    private val oneDay = (1000*60*60*24)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,19 +46,19 @@ class SampleDayDialog : ComponentActivity() {
                         .weight(1f)
                         .fillMaxWidth(),
                 ) {
-                    HorizontalPager(
+                    VerticalPager(
                         count = 7,
                         state = pagerState,
                     ) {
                             page ->
                         when ( page ) {
-                            0 -> SamplingHistory(false, 0)
-                            1 -> SamplingHistory(false, 1)
-                            2 -> SamplingHistory(false, 2)
-                            3 -> SamplingHistory(false, 3)
-                            4 -> SamplingHistory(false, 4)
-                            5 -> SamplingHistory(false, 5)
-                            6 -> SamplingHistory(false, 6)
+                            0 -> SamplingHistory(false, -1, timestamp)
+                            1 -> SamplingHistory(false, -1, timestamp+oneDay)
+                            2 -> SamplingHistory(false, -1, timestamp+oneDay*2)
+                            3 -> SamplingHistory(false, -1, timestamp+oneDay*3)
+                            4 -> SamplingHistory(false, -1, timestamp+oneDay*4)
+                            5 -> SamplingHistory(false, -1, timestamp+oneDay*5)
+                            6 -> SamplingHistory(false, -1, timestamp+oneDay*6)
                         }
                     }
                 }
@@ -64,7 +66,7 @@ class SampleDayDialog : ComponentActivity() {
         }
         LaunchedEffect(key1 = 0, block = {
                 serviceScope.launch {
-                pagerState.scrollToPage(dow, 0f)
+                pagerState.scrollToPage(dow-1, 0f)
             }
         })
 

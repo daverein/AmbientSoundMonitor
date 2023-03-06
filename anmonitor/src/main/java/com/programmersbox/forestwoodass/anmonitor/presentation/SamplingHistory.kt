@@ -31,6 +31,7 @@ import com.programmersbox.forestwoodass.anmonitor.utils.COLORS_YELLOW_START
 import com.programmersbox.forestwoodass.anmonitor.utils.FormatTimeText
 import kotlinx.coroutines.*
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
@@ -38,26 +39,55 @@ import kotlin.math.min
 private const val TAG = "SamplingHistory"
 private const val GraphColor = "#88888888"
 
+@OptIn(ExperimentalPagerApi::class)
 @Composable
 fun SamplingHistory(weekView: Boolean, dow: Int = -1, timestamp:Long = 0L) {
-    val dbHelper = DBLevelStore(LocalContext.current)
     val viewCalendar = Calendar.getInstance()
     if ( timestamp != 0L ) {
         viewCalendar.timeInMillis = timestamp
     }
-    val samples = dbHelper.getAllSamples(weekView, dow)
+    val pagerState = rememberPagerState()
+    if ( weekView ) {
+        val viewCalendar2 = viewCalendar.clone() as Calendar
+        val viewCalendar3 = viewCalendar.clone() as Calendar
+        val viewCalendar4 = viewCalendar.clone() as Calendar
+        viewCalendar2.timeInMillis -= (1000*60*60*24*7)
+        viewCalendar3.timeInMillis -= (1000*60*60*24*7*2)
+        viewCalendar4.timeInMillis -= (1000*60*60*24*7*3)
+        HorizontalPager(
+            count = 4,
+            state = pagerState,
+        ) { page ->
+            when (page) {
+                0 -> DrawBody(true, dow, viewCalendar)
+                1 -> DrawBody(true, dow, viewCalendar2)
+                2 -> DrawBody(true, dow, viewCalendar3)
+                3 -> DrawBody(true, dow, viewCalendar4)
+            }
+        }
+    } else {
+        DrawBody(false, dow, viewCalendar)
+    }
+}
 
+@Composable
+private fun DrawBody(
+    weekView: Boolean,
+    dow: Int,
+    viewCalendar: Calendar
+) {
+    val dbHelper = DBLevelStore(LocalContext.current)
+
+    val samples = dbHelper.getAllSamples(weekView, dow, viewCalendar.timeInMillis)
     var minValue = 120f
     var maxValue = 0f
     samples.forEach {
         minValue = min(minValue, it.sampleValue)
         maxValue = max(maxValue, it.sampleValue)
     }
-    if ( samples.size > 0 ) {
-        FormatTimeText(weekView, samples[0].timestamp, dowIn = dow)
-    } else {
-        FormatTimeText(weekView, viewCalendar.timeInMillis, dowIn = dow)
-    }
+
+    FormatTimeText(weekView, viewCalendar.timeInMillis)
+
     Column(
         modifier = Modifier
             .selectableGroup(),
@@ -65,13 +95,10 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1, timestamp:Long = 0L) {
     ) {
 
         Spacer(Modifier.padding(12.dp))
-        DrawChartTitle(weekView, dow, viewCalendar, samples)
-
+        DrawChartTitle(weekView, viewCalendar)
         DrawSampleRange(minValue, maxValue, samples)
         Spacer(Modifier.padding(1.dp))
-
-        ChartLevels(weekView, dow, samples)
-
+        ChartLevels(weekView, viewCalendar, samples)
         Spacer(Modifier.padding(2.dp))
         Text(buildAnnotatedString {
             withStyle(
@@ -86,33 +113,22 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1, timestamp:Long = 0L) {
     }
 }
 
+
 @Composable
 private fun DrawChartTitle(
     weekView: Boolean,
-    dow: Int,
     calIn: Calendar,
-    samples: ArrayList<DBLevelStore.SampleValue>
 ) {
     Text(buildAnnotatedString {
         withStyle(style = SpanStyle(fontSize = 12.sp, color = Color.LightGray)) {
             if (weekView) {
                 append("This Week")
             } else {
-                if (dow == -1) {
+                if (calIn.get(Calendar.MONTH) == Calendar.getInstance().get(Calendar.MONTH) &&
+                    calIn.get(Calendar.DAY_OF_MONTH) == Calendar.getInstance().get(Calendar.DAY_OF_MONTH)) {
                     append("Today")
                 } else {
-                    if ( samples.size > 0 ) {
-                        val cal = Calendar.getInstance()
-                        cal.timeInMillis = samples[0].timestamp
-                        append("${DateFormat.format("EEE MMM dd", cal)}")
-                    } else {
-                        val now = Calendar.getInstance()
-                        now.timeInMillis = calIn.timeInMillis
-                        val nowDow = now.get(Calendar.DAY_OF_WEEK)
-
-                        now.timeInMillis = now.timeInMillis-(nowDow-dow-1)*(1000*60*60*24L)
-                        append("${DateFormat.format("EEE MMM dd", now)}")
-                    }
+                    append("${DateFormat.format("EEE MMM dd", calIn)}")
                 }
             }
         }
@@ -163,7 +179,11 @@ private fun DrawSampleRange(
 
 @OptIn(ExperimentalTextApi::class)
 @Composable
-fun ChartLevels(weekView: Boolean, dow: Int, samples: ArrayList<DBLevelStore.SampleValue>) {
+fun ChartLevels(
+    weekView: Boolean,
+    viewCalendar: Calendar,
+    samples: ArrayList<DBLevelStore.SampleValue>
+) {
     val hoursView = when (weekView) {
         true -> 7
         false -> 24
@@ -180,16 +200,19 @@ fun ChartLevels(weekView: Boolean, dow: Int, samples: ArrayList<DBLevelStore.Sam
                 detectTapGestures(
                     onTap = { tapOffset ->
                         if ( weekView ) {
-                            val mDow = floor((tapOffset.x /size.width.toFloat())*7).toInt()
-                            val startWeekTime = Calendar.getInstance().timeInMillis -
-                                    ((Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1) *
+                            val cal = viewCalendar.clone() as Calendar
+                            val mDow = floor((tapOffset.x /size.width.toFloat())*7).toInt()+1
+                            val startWeekTime = cal.timeInMillis -
+                                    ((cal.get(Calendar.DAY_OF_WEEK) - 1) *
                                             (1000 * 60 * 60 * 24))
-                            val timestamp = startWeekTime + mDow * (1000*60*60*24)
-                            Log.d(TAG, "Tapped offset = ${tapOffset.x}  days back = $mDow")
+                            Log.d(TAG, "Tapped offset = ${tapOffset.x}  days back = $mDow, with ${DateFormat.format(
+                                "MMM dd hh:mm:ss",
+                                startWeekTime
+                            )}")
                             context.startActivity(
                                 Intent(context, SampleDayDialog::class.java)
                                     .putExtra("DOW", mDow)
-                                    .putExtra("TIMESTAMP", timestamp)
+                                    .putExtra("TIMESTAMP", startWeekTime)
                             )
                         }
                     }
@@ -208,7 +231,8 @@ fun ChartLevels(weekView: Boolean, dow: Int, samples: ArrayList<DBLevelStore.Sam
             textMeasure
         )
 
-        if ( dow ==  -1 ) {
+        if ( viewCalendar.get(Calendar.MONTH) == Calendar.getInstance().get(Calendar.MONTH) &&
+            viewCalendar.get(Calendar.DAY_OF_MONTH) == Calendar.getInstance().get(Calendar.DAY_OF_MONTH) ) {
             drawTodayLine(weekView, startingOffset, chartWidth, chartHeight)
         }
 

@@ -5,7 +5,7 @@ import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import java.util.Calendar
+import java.util.*
 
 class DBLevelStore  // creating a constructor for our database handler.
     (context: Context?) : SQLiteOpenHelper(context, DB_NAME, null, DB_VERSION) {
@@ -55,8 +55,11 @@ class DBLevelStore  // creating a constructor for our database handler.
         return SampleValue(0f, 0L)
     }
 
-    fun getAllSamples(weekly: Boolean, dow: Int): ArrayList<SampleValue> {
+    fun getAllSamples(weekly: Boolean, dow: Int, timestamp: Long): ArrayList<SampleValue> {
         val cal = Calendar.getInstance()
+        if ( timestamp != 0L ) {
+            cal.timeInMillis = timestamp
+        }
         val beforeTime = when ( weekly ) {
             false -> if ( dow == -1 ) {
                     cal.timeInMillis - ((Calendar.getInstance().get(Calendar.HOUR_OF_DAY)*(1000*60*60))
