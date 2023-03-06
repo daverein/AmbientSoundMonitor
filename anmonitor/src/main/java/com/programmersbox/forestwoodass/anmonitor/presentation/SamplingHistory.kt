@@ -39,8 +39,12 @@ private const val TAG = "SamplingHistory"
 private const val GraphColor = "#88888888"
 
 @Composable
-fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
+fun SamplingHistory(weekView: Boolean, dow: Int = -1, timestamp:Long = 0L) {
     val dbHelper = DBLevelStore(LocalContext.current)
+    val viewCalendar = Calendar.getInstance()
+    if ( timestamp != 0L ) {
+        viewCalendar.timeInMillis = timestamp
+    }
     val samples = dbHelper.getAllSamples(weekView, dow)
 
     var minValue = 120f
@@ -52,7 +56,7 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
     if ( samples.size > 0 ) {
         FormatTimeText(weekView, samples[0].timestamp, dowIn = dow)
     } else {
-        FormatTimeText(weekView, Calendar.getInstance().timeInMillis, dowIn = dow)
+        FormatTimeText(weekView, viewCalendar.timeInMillis, dowIn = dow)
     }
     Column(
         modifier = Modifier
@@ -61,7 +65,7 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
     ) {
 
         Spacer(Modifier.padding(12.dp))
-        DrawChartTitle(weekView, dow, samples)
+        DrawChartTitle(weekView, dow, viewCalendar, samples)
 
         DrawSampleRange(minValue, maxValue, samples)
         Spacer(Modifier.padding(1.dp))
@@ -86,6 +90,7 @@ fun SamplingHistory(weekView: Boolean, dow: Int = -1) {
 private fun DrawChartTitle(
     weekView: Boolean,
     dow: Int,
+    calIn: Calendar,
     samples: ArrayList<DBLevelStore.SampleValue>
 ) {
     Text(buildAnnotatedString {
@@ -102,6 +107,7 @@ private fun DrawChartTitle(
                         append("${DateFormat.format("EEE MMM dd", cal)}")
                     } else {
                         val now = Calendar.getInstance()
+                        now.timeInMillis = calIn.timeInMillis
                         val nowDow = now.get(Calendar.DAY_OF_WEEK)
 
                         now.timeInMillis = now.timeInMillis-(nowDow-dow-1)*(1000*60*60*24L)
