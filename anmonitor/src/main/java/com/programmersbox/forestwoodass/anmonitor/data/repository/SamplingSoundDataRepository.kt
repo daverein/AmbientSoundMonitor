@@ -3,32 +3,11 @@ package com.programmersbox.forestwoodass.anmonitor.data.repository
 import android.app.Service
 import android.content.Context
 import android.content.SharedPreferences
-import com.programmersbox.forestwoodass.anmonitor.presentation.tile.SamplingTile.Companion.refreshTile
-import java.util.*
 
 class SamplingSoundDataRepository(private val context: Context) {
 
     private val sharedPreferences: SharedPreferences by lazy {
         context.getSharedPreferences(PREFERENCES_FILENAME, Service.MODE_PRIVATE)
-    }
-
-    fun refreshTiles() {
-        refreshTile(context)
-    }
-
-    fun getSamplePrimaryColor(): Int {
-        return sharedPreferences.getInt(
-            SAMPLE_PRIMARY_COLOR,
-            android.graphics.Color.parseColor("#00E676")
-        )
-    }
-
-    fun getSampleSecondaryColor(): Int {
-        return sharedPreferences.getInt(
-            SAMPLE_SECONDARY_COLOR, android.graphics.Color.parseColor(
-                "#226949"
-            )
-        )
     }
 
     fun muteNotificationsUntil(timeInMillis: Long) {
@@ -46,10 +25,6 @@ class SamplingSoundDataRepository(private val context: Context) {
     companion object {
         private const val PREFERENCES_FILENAME = "sampledb_data_points"
         private const val MUTE_UNTIL = "mute_until"
-        private const val LATEST_SAMPLE = "SampleDB"
-        private const val LATEST_SAMPLE_TIME = "SampleTimestampInMilli"
-        private const val SAMPLE_PRIMARY_COLOR = "SamplePrimaryColor"
-        private const val SAMPLE_SECONDARY_COLOR = "SampleSecondaryColor"
 
     }
 }

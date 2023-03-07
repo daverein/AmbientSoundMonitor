@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.*
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.*
@@ -40,7 +41,6 @@ import androidx.core.app.ActivityCompat
 import androidx.wear.compose.material.*
 import com.google.accompanist.pager.*
 import com.programmersbox.forestwoodass.anmonitor.R
-import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
 import com.programmersbox.forestwoodass.anmonitor.presentation.theme.WearAppTheme
 import com.programmersbox.forestwoodass.anmonitor.services.SamplingService
 import com.programmersbox.forestwoodass.anmonitor.utils.*
@@ -49,8 +49,6 @@ import kotlin.math.min
 
 
 class DBMonitor : ComponentActivity() {
-
-    private val repo: SamplingSoundDataRepository by lazy { SamplingSoundDataRepository(this) }
     private val soundRecord: SoundRecorder by lazy { SoundRecorder(this) }
     private val isRound: Boolean by lazy {
         resources.configuration.isScreenRound
@@ -234,7 +232,7 @@ class DBMonitor : ComponentActivity() {
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                Color(repo.getSampleSecondaryColor())
+                Color(MaterialTheme.colors.secondaryVariant.toArgb())
             ),
             content = {
                 Text(
@@ -402,7 +400,7 @@ class DBMonitor : ComponentActivity() {
                 }
             },
             colors = ButtonDefaults.buttonColors(
-                Color(repo.getSampleSecondaryColor())
+                Color(MaterialTheme.colors.secondaryVariant.toArgb())
             ),
             content = {
                 Text(

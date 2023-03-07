@@ -15,7 +15,7 @@ import com.google.android.horologist.compose.tools.buildDeviceParameters
 import com.google.android.horologist.tiles.ExperimentalHorologistTilesApi
 import com.google.android.horologist.tiles.SuspendingTileService
 import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
-import com.programmersbox.forestwoodass.anmonitor.data.repository.SamplingSoundDataRepository
+import com.programmersbox.forestwoodass.anmonitor.presentation.theme.getWearColorPalette
 import com.programmersbox.forestwoodass.anmonitor.services.SamplingService
 import com.programmersbox.forestwoodass.anmonitor.utils.MonitorDBLevels
 import com.programmersbox.forestwoodass.anmonitor.utils.isMyServiceRunning
@@ -30,7 +30,6 @@ private const val REFRESH_CMD = "Refresh"
 
 @OptIn(ExperimentalHorologistTilesApi::class)
 class SamplingTile : SuspendingTileService() {
-    private val repo: SamplingSoundDataRepository by lazy { SamplingSoundDataRepository(this) }
 
     private val dbHelper: DBLevelStore by lazy { DBLevelStore(this) }
 
@@ -67,7 +66,7 @@ class SamplingTile : SuspendingTileService() {
         } else {
             Color.White.toArgb()
         }
-
+    val colors = getWearColorPalette()
     val layout =  PrimaryLayout.Builder(deviceParameters)
         .setPrimaryLabelTextContent(
             Text.Builder(
@@ -75,7 +74,7 @@ class SamplingTile : SuspendingTileService() {
                 simpleDateFormat.format(calendar.time)
             )
                 .setTypography(Typography.TYPOGRAPHY_CAPTION1)
-                .setColor(ColorBuilders.argb(repo.getSamplePrimaryColor()))
+                .setColor(ColorBuilders.argb(colors.secondary.toArgb()))
                 .build()
         )
         .setContent(
@@ -114,7 +113,7 @@ class SamplingTile : SuspendingTileService() {
                         .setChipColors(
                             ChipColors(
                                 /*backgroundColor=*/ ColorBuilders.argb(
-                                    repo.getSampleSecondaryColor()
+                                    colors.secondaryVariant.toArgb()
                                 ),
                                 /*contentColor=*/ ColorBuilders.argb(Color.White.toArgb())
                             )
