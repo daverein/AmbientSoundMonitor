@@ -29,6 +29,7 @@ import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
 import com.programmersbox.forestwoodass.anmonitor.utils.COLORS_RED_START
 import com.programmersbox.forestwoodass.anmonitor.utils.COLORS_YELLOW_START
 import com.programmersbox.forestwoodass.anmonitor.utils.FormatTimeText
+import com.programmersbox.forestwoodass.anmonitor.utils.MonitorDBLevels
 import kotlinx.coroutines.*
 import java.util.*
 import kotlin.collections.ArrayList
@@ -99,6 +100,17 @@ private fun DrawBody(
         Spacer(Modifier.padding(1.dp))
         ChartLevels(weekView, viewCalendar, samples)
         Spacer(Modifier.padding(2.dp))
+        DrawSummaryInfo(samples)
+    }
+}
+
+@Composable
+private fun DrawSummaryInfo(samples: java.util.ArrayList<DBLevelStore.SampleValue>) {
+    val monitor = MonitorDBLevels(LocalContext.current, null)
+    val timeAbove70 = monitor.minutesInRange(70f, 120f, samples)
+    val timeAbove84 = monitor.minutesInRange(84f, 120f, samples)
+    val timeAbove92 = monitor.minutesInRange(92f, 120f, samples)
+    if (timeAbove70 == 0 && timeAbove84 == 0 && timeAbove92 == 0) {
         Text(buildAnnotatedString {
             withStyle(
                 style = SpanStyle(
@@ -107,6 +119,39 @@ private fun DrawBody(
                 )
             ) {
                 append("No warnings")
+            }
+        })
+    } else if (timeAbove70 > 0) {
+        Text(buildAnnotatedString {
+            withStyle(
+                style = SpanStyle(
+                    fontSize = 12.sp,
+                    color = Color.Yellow
+                )
+            ) {
+                append(">= 70dB: ${timeAbove70 / (60 * 60)}h, ${timeAbove70 / (60) % 60}m")
+            }
+        })
+    } else if (timeAbove84 > 0) {
+        Text(buildAnnotatedString {
+            withStyle(
+                style = SpanStyle(
+                    fontSize = 12.sp,
+                    color = Color.Red
+                )
+            ) {
+                append(">= 84dB: ${timeAbove84 / (60 * 60)}h, ${timeAbove84 / (60) % 60}m")
+            }
+        })
+    } else if (timeAbove92 > 0) {
+        Text(buildAnnotatedString {
+            withStyle(
+                style = SpanStyle(
+                    fontSize = 12.sp,
+                    color = Color.Red
+                )
+            ) {
+                append(">= 92dB: ${timeAbove92 / (60 * 60)}h, ${timeAbove92 / (60) % 60}m")
             }
         })
     }
@@ -118,25 +163,25 @@ private fun DrawChartTitle(
     weekView: Boolean,
     calIn: Calendar,
 ) {
+    val currentDayOfYear = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
+    val calInDayOfYear = calIn.get(Calendar.DAY_OF_YEAR)
     Text(buildAnnotatedString {
         withStyle(style = SpanStyle(fontSize = 12.sp, color = Color.LightGray)) {
             if (weekView) {
-                if ( calIn.get(Calendar.DAY_OF_YEAR) + 7 > Calendar.getInstance().get(Calendar.DAY_OF_YEAR)) {
+                if ( calInDayOfYear + 7 > currentDayOfYear) {
                     append("This Week")
-                } else if ( calIn.get(Calendar.DAY_OF_YEAR) + 14 > Calendar.getInstance().get(Calendar.DAY_OF_YEAR) ) {
+                } else if ( calInDayOfYear + 14 > currentDayOfYear ) {
                     append("Last Week")
-                } else if ( calIn.get(Calendar.DAY_OF_YEAR) + 21 > Calendar.getInstance().get(Calendar.DAY_OF_YEAR) ) {
+                } else if ( calInDayOfYear + 21 > currentDayOfYear ) {
                     append("2 weeks ago")
                 } else {
                     append("3 weeks ago")
                 }
-            } else {
-                if (calIn.get(Calendar.MONTH) == Calendar.getInstance().get(Calendar.MONTH) &&
+            } else if (calIn.get(Calendar.MONTH) == Calendar.getInstance().get(Calendar.MONTH) &&
                     calIn.get(Calendar.DAY_OF_MONTH) == Calendar.getInstance().get(Calendar.DAY_OF_MONTH)) {
                     append("Today")
-                } else {
-                    append("${DateFormat.format("EEE MMM dd", calIn)}")
-                }
+            } else {
+                append("${DateFormat.format("EEE MMM dd", calIn)}")
             }
         }
     })

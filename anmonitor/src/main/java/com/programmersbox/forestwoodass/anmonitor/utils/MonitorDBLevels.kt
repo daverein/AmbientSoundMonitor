@@ -1,9 +1,12 @@
 package com.programmersbox.forestwoodass.anmonitor.utils
 
 import android.content.Context
+import android.text.format.DateFormat
+import android.util.Log
+import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
 import java.util.*
 
-class MonitorDBLevels(val context: Context, private val warningHelper: WarningHelper) {
+class MonitorDBLevels(val context: Context, private val warningHelper: WarningHelper?) {
 
     enum class DbDoseLength(
         val dbLevel: Float = 0.0f,
@@ -96,9 +99,40 @@ class MonitorDBLevels(val context: Context, private val warningHelper: WarningHe
         return rc
     }
 
+    fun minutesInRange(minValue: Float, maxValue: Float, samples: ArrayList<DBLevelStore.SampleValue>): Int {
+        var lastTimestamp = 0L
+        var totalSeconds = 0
+        samples.filter {
+            it.sampleValue >= minValue && it.sampleValue < maxValue
+        }.sortedWith(compareBy { it.timestamp })
+            // Need to sort asc by timestamp here
+        .forEach {
+            if ( lastTimestamp == 0L ) {
+                Log.d("MinutesInRange", "Starting ${DateFormat.format("MMM dd hh:mm:ss", it.timestamp)}")
+                lastTimestamp = it.timestamp
+            } else {
+                Log.d("MinutesInRange", "next ${DateFormat.format("MMM dd hh:mm:ss", it.timestamp)}")
+                Log.d("MinutesInRange", "checking = ${it.timestamp - lastTimestamp}")
+                if ( it.timestamp < lastTimestamp + (1000*60*20) ) {
+                    totalSeconds += ((it.timestamp - lastTimestamp)/1000).toInt()
+                    Log.d("MinutesInRange", "Adding totalsec = ${it.timestamp - lastTimestamp}")
+                    Log.d("MinutesInRange", "so far totalsec = ${totalSeconds/60} minutes")
+                } else {
+                    totalSeconds += (60*15)
+                    lastTimestamp = 0L
+                }
+                lastTimestamp = it.timestamp
+            }
+        }
+        if ( lastTimestamp != 0L )
+            totalSeconds += (60*15)
+        Log.d("MinutesInRange", "totalsec = $totalSeconds")
+        return totalSeconds
+    }
+
     private fun determineShowNotification() {
         if (showNotification) {
-            warningHelper.showNotification(
+            warningHelper?.showNotification(
                 lastMaxDB,
                 Calendar.getInstance().timeInMillis,
                 Calendar.getInstance().timeInMillis - startLevelsTimestamp
@@ -108,7 +142,6 @@ class MonitorDBLevels(val context: Context, private val warningHelper: WarningHe
     }
 
     companion object {
-        private const val TAG = "MonitorDBLevels"
         const val DEFAULT_WAIT_TIME = 15L
     }
 }
