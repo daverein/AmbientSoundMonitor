@@ -3,6 +3,7 @@ package com.programmersbox.forestwoodass.anmonitor.utils
 import android.content.Context
 import android.text.format.DateFormat
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import com.programmersbox.forestwoodass.anmonitor.data.repository.DBLevelStore
 import java.util.*
 
@@ -11,39 +12,46 @@ class MonitorDBLevels(val context: Context, private val warningHelper: WarningHe
     enum class DbDoseLength(
         val dbLevel: Float = 0.0f,
         val timeLengthInSec: Int = 0,
-        val waitInterval: Long = DEFAULT_WAIT_TIME
+        val waitInterval: Long = DEFAULT_WAIT_TIME,
+        val warningColor: Color
     ) {
 //        DEBUG(
 //            dbLevel = 20f,
 //            timeLengthInSec = 15
 //        ),
         LONG_TERM(
-            dbLevel = 75f,
-            timeLengthInSec = 60 * 60 * 24
+            dbLevel = 70f,
+            timeLengthInSec = 60 * 60 * 24,
+            warningColor = Color.Yellow
         ),
         VERY_LOW(
             dbLevel = 82f,
-            timeLengthInSec = 60 * 60
+            timeLengthInSec = 60 * 60,
+            warningColor = Color.Yellow
         ),
         LOW(
             dbLevel = 86f,
             timeLengthInSec = 60 * 30,
-            waitInterval = 10
+            waitInterval = 10,
+            warningColor = Color.Red
         ),
         MEDIUM(
             dbLevel = 90f,
             timeLengthInSec = 60 * 15,
-            waitInterval = 5
+            waitInterval = 5,
+            warningColor = Color.Red
         ),
         HIGH(
             dbLevel = 95f,
             timeLengthInSec = 60 * 9,
-            waitInterval = 3
+            waitInterval = 3,
+            warningColor = Color.Red
         ),
         VERY_HIGH(
             dbLevel = 98f,
             timeLengthInSec = 60 * 3,
-            waitInterval = 1
+            waitInterval = 1,
+            warningColor = Color.Red
         )
     }
 

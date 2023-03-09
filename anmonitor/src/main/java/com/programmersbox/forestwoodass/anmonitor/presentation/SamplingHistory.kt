@@ -107,10 +107,25 @@ private fun DrawBody(
 @Composable
 private fun DrawSummaryInfo(samples: java.util.ArrayList<DBLevelStore.SampleValue>) {
     val monitor = MonitorDBLevels(LocalContext.current, null)
-    val timeAbove70 = monitor.minutesInRange(70f, 120f, samples)
-    val timeAbove84 = monitor.minutesInRange(84f, 120f, samples)
-    val timeAbove92 = monitor.minutesInRange(92f, 120f, samples)
-    if (timeAbove70 == 0 && timeAbove84 == 0 && timeAbove92 == 0) {
+    var warning = false
+    MonitorDBLevels.DbDoseLength.values().forEach {
+
+        val timeAbove = monitor.minutesInRange(it.dbLevel, 120f, samples)
+        if ( timeAbove > 0 ) {
+            warning = true
+            Text(buildAnnotatedString {
+                withStyle(
+                    style = SpanStyle(
+                        fontSize = 12.sp,
+                        color = it.warningColor
+                    )
+                ) {
+                    append(">= ${it.dbLevel}dB: ${timeAbove / (60 * 60)}h, ${timeAbove / (60) % 60}m")
+                }
+            })
+        }
+    }
+    if ( !warning ) {
         Text(buildAnnotatedString {
             withStyle(
                 style = SpanStyle(
@@ -119,40 +134,7 @@ private fun DrawSummaryInfo(samples: java.util.ArrayList<DBLevelStore.SampleValu
                 )
             ) {
                 append("No warnings")
-            }
-        })
-    } else if (timeAbove70 > 0) {
-        Text(buildAnnotatedString {
-            withStyle(
-                style = SpanStyle(
-                    fontSize = 12.sp,
-                    color = Color.Yellow
-                )
-            ) {
-                append(">= 70dB: ${timeAbove70 / (60 * 60)}h, ${timeAbove70 / (60) % 60}m")
-            }
-        })
-    } else if (timeAbove84 > 0) {
-        Text(buildAnnotatedString {
-            withStyle(
-                style = SpanStyle(
-                    fontSize = 12.sp,
-                    color = Color.Red
-                )
-            ) {
-                append(">= 84dB: ${timeAbove84 / (60 * 60)}h, ${timeAbove84 / (60) % 60}m")
-            }
-        })
-    } else if (timeAbove92 > 0) {
-        Text(buildAnnotatedString {
-            withStyle(
-                style = SpanStyle(
-                    fontSize = 12.sp,
-                    color = Color.Red
-                )
-            ) {
-                append(">= 92dB: ${timeAbove92 / (60 * 60)}h, ${timeAbove92 / (60) % 60}m")
-            }
+        }
         })
     }
 }
