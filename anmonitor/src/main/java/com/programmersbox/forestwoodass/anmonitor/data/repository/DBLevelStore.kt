@@ -78,7 +78,6 @@ class DBLevelStore  // creating a constructor for our database handler.
             false -> (1000 * 60 * 60 * 24)
             true -> (1000 * 60 * 60 * 24 * 7)
         }
-        //Log.d("DBLevelStore", "dow: $dow / DOW: ${cal.get(Calendar.DAY_OF_WEEK)}  before $beforeTime (${DateFormat.format("MMM dd hh:mm:ss", beforeTime)}) and $afterTime (${DateFormat.format("MMM dd hh:mm:ss", afterTime)}) and ${cal.timeInMillis}  (${DateFormat.format("MMM dd hh:mm:ss", cal.timeInMillis)})")
 
         return getResults(beforeTime, afterTime)
     }

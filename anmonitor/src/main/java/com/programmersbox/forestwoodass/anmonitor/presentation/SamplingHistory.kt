@@ -1,5 +1,6 @@
 package com.programmersbox.forestwoodass.anmonitor.presentation
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.*
 import android.text.format.DateFormat
@@ -71,6 +72,7 @@ fun SamplingHistory(weekView: Boolean, timestamp:Long = 0L) {
     }
 }
 
+@SuppressLint("MutableCollectionMutableState")
 @Composable
 private fun DrawBody(
     weekView: Boolean,
@@ -78,7 +80,7 @@ private fun DrawBody(
 ) {
     val dbHelper = DBLevelStore(LocalContext.current)
 
-    val samples = dbHelper.getAllSamples(weekView, viewCalendar.timeInMillis)
+    val samples by remember { mutableStateOf (dbHelper.getAllSamples(weekView, viewCalendar.timeInMillis))}
     var minValue = 120f
     var maxValue = 0f
     samples.forEach {
