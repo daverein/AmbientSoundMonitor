@@ -10,7 +10,7 @@ ktlint = "0.46.1"
 androidx-wear-tiles = "1.1.0"
 org-jetbrains-kotlin = "1.8.10"
 org-jetbrains-kotlinx = "1.6.4"
-horologist = "0.3.3"
+horologist = "0.3.7"
 
 [libraries]
 android-lint-gradle = "com.android.tools.lint:lint-gradle:30.4.2"
